@@ -8,8 +8,9 @@ const source = fs.readFileSync(path.join(__dirname, "../public/site.js"), "utf8"
 const ADDRESS = "hello@marcinurbanski.dev";
 
 // Runs site.js against just enough of a page: the copy button, the email link (mid-scramble), a clipboard that
-// accepts or refuses, timers run by hand (a cleared timer does not run) and an optional window.SiteEffects.
-function page({ clipboard = "ok", effects = false, motion = true } = {}) {
+// accepts or refuses, timers run by hand (a cleared timer does not run), the navigator's platform and an
+// optional window.SiteEffects.
+function page({ clipboard = "ok", effects = false, motion = true, platform = "Win32" } = {}) {
   const added = [], copied = [], scrambles = [], timers = [], cleared = new Set();
   let selected = null;
   const node = tag => ({ tagName: tag, textContent: "", className: "", attrs: {}, setAttribute(k, v) { this.attrs[k] = v; } });
@@ -31,7 +32,7 @@ function page({ clipboard = "ok", effects = false, motion = true } = {}) {
       createElement: node,
       createRange: () => ({ selectNodeContents(n) { this.node = n; } })
     },
-    navigator: clipboard === "missing" ? {} : { clipboard: { writeText } },
+    navigator: clipboard === "missing" ? { platform } : { platform, clipboard: { writeText } },
     getSelection: () => ({ removeAllRanges() {}, addRange(r) { selected = r.node; } }),
     setTimeout: (fn, ms) => {
       const id = timers.length + 1;
@@ -111,11 +112,36 @@ test("when the clipboard refuses, copy selects a hidden element holding the cons
   assert.equal(p.selected.textContent, ADDRESS);
   assert.equal(p.selected.className, "hp-sr");
   assert.equal(p.selected.attrs["aria-hidden"], "true");
-  assert.equal(p.btn.textContent, "copy address");
+  assert.equal(p.btn.textContent, "press Ctrl+C to copy");
 });
 
 test("without a clipboard API, copy selects the hidden address", async () => {
   const p = page({ clipboard: "missing" });
   await p.click();
   assert.equal(p.selected.textContent, ADDRESS);
+  assert.equal(p.btn.textContent, "press Ctrl+C to copy");
+});
+
+test("on a Mac the refused copy's hint names Cmd+C", async () => {
+  const p = page({ clipboard: "refuse", platform: "MacIntel" });
+  await p.click();
+  assert.equal(p.btn.textContent, "press ⌘C to copy");
+});
+
+test("the refused copy's hint is announced and turns back after 2s, leaving the address selected", async () => {
+  const p = page({ clipboard: "refuse" });
+  await p.click();
+  assert.equal(p.status().textContent, "press Ctrl+C to copy");
+  p.timers.find(t => t.ms === 2000).fn();
+  assert.equal(p.btn.textContent, "copy address");
+  assert.equal(p.status().textContent, "");
+  assert.equal(p.selected.textContent, ADDRESS);
+});
+
+test("a second refused copy within 2s restarts the 2s before the hint turns back", async () => {
+  const p = page({ clipboard: "refuse" });
+  await p.click();
+  await p.click();
+  p.timers.filter(t => t.ms === 2000)[0].fn();
+  assert.equal(p.btn.textContent, "press Ctrl+C to copy");
 });
