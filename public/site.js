@@ -6,7 +6,7 @@
 // without effects.js.
 (() => {
   const ADDRESS = "hello@marcinurbanski.dev", LABEL = "copy address", COPIED = "copied to clipboard";
-  const mac = /Mac/.test((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "");
+  const mac = /mac/i.test((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "");
   const HINT = "press " + (mac ? "⌘C" : "Ctrl+C") + " to copy";
   const btn = document.getElementById("copy");
   if (!btn) return;

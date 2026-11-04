@@ -10,7 +10,7 @@ const ADDRESS = "hello@marcinurbanski.dev";
 // Runs site.js against just enough of a page: the copy button, the email link (mid-scramble), a clipboard that
 // accepts or refuses, timers run by hand (a cleared timer does not run), the navigator's platform and an
 // optional window.SiteEffects.
-function page({ clipboard = "ok", effects = false, motion = true, platform = "Win32" } = {}) {
+function page({ clipboard = "ok", effects = false, motion = true, platform = "Win32", userAgentData } = {}) {
   const added = [], copied = [], scrambles = [], timers = [], cleared = new Set();
   let selected = null;
   const node = tag => ({ tagName: tag, textContent: "", className: "", attrs: {}, setAttribute(k, v) { this.attrs[k] = v; } });
@@ -32,7 +32,7 @@ function page({ clipboard = "ok", effects = false, motion = true, platform = "Wi
       createElement: node,
       createRange: () => ({ selectNodeContents(n) { this.node = n; } })
     },
-    navigator: clipboard === "missing" ? { platform } : { platform, clipboard: { writeText } },
+    navigator: clipboard === "missing" ? { platform, userAgentData } : { platform, userAgentData, clipboard: { writeText } },
     getSelection: () => ({ removeAllRanges() {}, addRange(r) { selected = r.node; } }),
     setTimeout: (fn, ms) => {
       const id = timers.length + 1;
@@ -124,6 +124,12 @@ test("without a clipboard API, copy selects the hidden address", async () => {
 
 test("on a Mac the refused copy's hint names Cmd+C", async () => {
   const p = page({ clipboard: "refuse", platform: "MacIntel" });
+  await p.click();
+  assert.equal(p.btn.textContent, "press ⌘C to copy");
+});
+
+test("on a Mac reported as macOS by userAgentData the refused copy's hint names Cmd+C", async () => {
+  const p = page({ clipboard: "refuse", platform: "", userAgentData: { platform: "macOS" } });
   await p.click();
   assert.equal(p.btn.textContent, "press ⌘C to copy");
 });
