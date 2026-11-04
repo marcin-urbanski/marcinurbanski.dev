@@ -8,9 +8,9 @@ const source = fs.readFileSync(path.join(__dirname, "../public/site.js"), "utf8"
 const ADDRESS = "hello@marcinurbanski.dev";
 
 // Runs site.js against just enough of a page: the copy button, the email link (mid-scramble), a clipboard that
-// accepts or refuses, timers run by hand and an optional window.SiteEffects.
+// accepts or refuses, timers run by hand (a cleared timer does not run) and an optional window.SiteEffects.
 function page({ clipboard = "ok", effects = false, motion = true } = {}) {
-  const added = [], copied = [], scrambles = [], timers = [];
+  const added = [], copied = [], scrambles = [], timers = [], cleared = new Set();
   let selected = null;
   const node = tag => ({ tagName: tag, textContent: "", className: "", attrs: {}, setAttribute(k, v) { this.attrs[k] = v; } });
   const btn = Object.assign(node("button"), {
@@ -33,8 +33,12 @@ function page({ clipboard = "ok", effects = false, motion = true } = {}) {
     },
     navigator: clipboard === "missing" ? {} : { clipboard: { writeText } },
     getSelection: () => ({ removeAllRanges() {}, addRange(r) { selected = r.node; } }),
-    setTimeout: (fn, ms) => timers.push({ fn, ms }),
-    clearTimeout: () => {}
+    setTimeout: (fn, ms) => {
+      const id = timers.length + 1;
+      timers.push({ fn: () => { if (!cleared.has(id)) fn(); }, ms });
+      return id;
+    },
+    clearTimeout: id => cleared.add(id)
   };
   if (effects) window.SiteEffects = { scramble: (el, to, ms) => { scrambles.push({ el, to, ms }); el.textContent = to; } };
   window.window = window;
@@ -60,6 +64,16 @@ test("copy confirms in the label and turns back after 2s", async () => {
   const revert = p.timers.find(t => t.ms === 2000);
   assert.ok(revert, "a 2s timer");
   revert.fn();
+  assert.equal(p.btn.textContent, "copy address");
+});
+
+test("a second copy within 2s restarts the 2s before the label turns back", async () => {
+  const p = page();
+  await p.click();
+  await p.click();
+  p.timers.filter(t => t.ms === 2000)[0].fn();
+  assert.equal(p.btn.textContent, "copied to clipboard");
+  p.timers.filter(t => t.ms === 2000)[1].fn();
   assert.equal(p.btn.textContent, "copy address");
 });
 
