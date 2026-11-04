@@ -17,7 +17,7 @@
 
   // 3D: the face turns a little towards the pointer (near points move more than far ones) and a soft light
   // follows it; after a few still seconds, and on touch screens, it sways slowly. Characters stay as above.
-  const { sourcePoint, normalAt, lightFactor } = window.Portrait3D;
+  const { sourcePoint, normalAt, lightFactor, ease, toEdge } = window.Portrait3D;
   const YAW = .17, PITCH = .1, RELIEF = .3, LIGHT = .55;   // max turn (rad), depth as share of face width, light strength
   const FRONT = [0, 0, 1];
   let S, OX, OY, yaw = 0, pitch = 0, lx = 0, ly = 0, movedAt = -1e9, built = "";
@@ -45,15 +45,11 @@
     let ty, tp, tlx, tly;
     if (pointer && now - movedAt < 2.5) {
       const fx = OX + GW * S / 2, fy = heroTop - window.scrollY + OY + GH * S / 2;   // face centre on screen
-      // -1 .. 1 from the face centre to the viewport edge on that side, so the turn is the same both ways
-      const toEdge = (p, c, size) => Math.max(-1, Math.min(1, (p - c) / Math.max(1, p > c ? size - c : c)));
       const nx = toEdge(pointer.x, fx, VW), ny = toEdge(pointer.y, fy, VH);
       ty = nx * YAW; tp = -ny * PITCH; tlx = nx * .9; tly = ny * .9;
     } else {                                              // a slow sway, lit from the upper left
       ty = Math.sin(now * .45) * YAW * .7; tp = Math.sin(now * .31 + 1) * PITCH * .5; tlx = -.35; tly = -.45;
     }
-    // ease, and land exactly on the target so a centred pointer gives exactly the flat portrait
-    const ease = (v, t) => Math.abs(t - v) < 1e-3 ? t : v + (t - v) * .08;
     yaw = ease(yaw, ty); pitch = ease(pitch, tp); lx = ease(lx, tlx); ly = ease(ly, tly);
     const key = [yaw, pitch, lx, ly].map(v => v.toFixed(4)).join();
     if (key !== built) { built = key; computeBase(yaw, pitch, [lx, ly, 1]); }
@@ -87,7 +83,8 @@
     base = new Float32Array(cols * rows); glow = new Float32Array(cols * rows);
     jitter = new Int8Array(cols * rows); filled = new Uint8Array(cols * rows);
     targets = [];
-    // Every cell the face can cover at its widest turn is a target, so turning never clips it.
+    // Every cell the face covers at its widest turns is a target, so turning almost never clips it; the few
+    // dim cells an in-between turn uncovers sit next to a target and fill when it settles.
     const reach = new Float32Array(cols * rows);
     if (!reduce) for (const [yw, pt] of [[YAW, 0], [-YAW, 0], [0, PITCH], [0, -PITCH], [YAW, PITCH], [YAW, -PITCH], [-YAW, PITCH], [-YAW, -PITCH]]) {
       computeBase(yw, pt, FRONT);
@@ -96,8 +93,8 @@
     computeBase(0, 0, FRONT); built = "";
     for (let y = 0; y < rows; y++) for (let x = c0; x < cols; x++) {
       const fade = Math.min(1, (FH - (y + .5) * ch) / (FH * .22)), k = y * cols + x;
-      // reach is measured without the light, which can brighten a cell by up to about 40%: a lower bar
-      if ((base[k] > .03 || reach[k] > .02) && Math.random() < fade) targets.push(k);
+      // reach is measured without the light, which brightens a cell by less than 1 + LIGHT: a lower bar
+      if ((base[k] > .03 || reach[k] > .03 / (1 + LIGHT)) && Math.random() < fade) targets.push(k);
     }
     // A ghost of the face is there from the first frame; the bubbles bring the rest.
     for (const k of targets) if (reduce || Math.random() < .4) filled[k] = 1;

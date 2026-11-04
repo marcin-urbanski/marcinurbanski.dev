@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { depthAt, sourcePoint, normalAt, lightFactor } = require("../public/portrait-3d.js");
+const { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge } = require("../public/portrait-3d.js");
 
 // A 3 x 2 depth grid, one sample every 2 portrait grid points.
 const depth = { w: 3, h: 2, scale: 2, data: Uint8Array.from([0, 51, 255, 102, 153, 204]) };
@@ -63,4 +63,28 @@ test("lightFactor brightens the side facing the light and darkens the other", ()
   const right = [.6, 0, .8], left = [-.6, 0, .8], light = [1, 0, 1];
   assert.ok(lightFactor(right, light, .55) > 1);
   assert.ok(lightFactor(left, light, .55) < 1);
+});
+
+test("ease lands exactly on its target in a few dozen frames", () => {
+  let v = .17, frames = 0;
+  while (v !== 0 && frames < 200) { v = ease(v, 0); frames++; }
+  assert.equal(v, 0);
+  assert.ok(frames < 100, `${frames} frames`);
+});
+
+test("ease moves part of the way towards a distant target", () => {
+  const v = ease(0, 1);
+  assert.ok(v > 0 && v < .2, `${v}`);
+});
+
+test("toEdge spans -1 .. 1 from an off-centre point to each viewport edge", () => {
+  assert.equal(toEdge(900, 900, 1280), 0);
+  assert.equal(toEdge(0, 900, 1280), -1);
+  assert.equal(toEdge(1280, 900, 1280), 1);
+  assert.ok(near(toEdge(1090, 900, 1280), .5));
+});
+
+test("toEdge is 0, not NaN, with the centre on the viewport edge", () => {
+  assert.equal(toEdge(0, 0, 800), 0);
+  assert.equal(toEdge(800, 800, 800), 0);
 });

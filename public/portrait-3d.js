@@ -43,7 +43,18 @@
     return 1 + strength * ((n[0] * l[0] + n[1] * l[1] + n[2] * l[2]) / ll - n[2]);
   }
 
-  const api = { depthAt, sourcePoint, normalAt, lightFactor };
+  // One frame of easing towards a target; lands exactly on it once close, so at rest the face is exactly flat.
+  function ease(v, target) {
+    return Math.abs(target - v) < 1e-3 ? target : v + (target - v) * .08;
+  }
+
+  // Position p as -1 .. 1 from centre c to the edge of 0 .. size on that side, so the turn reaches its
+  // full size both ways even when the face is off-centre.
+  function toEdge(p, c, size) {
+    return (p - c) / Math.max(1, p > c ? size - c : c);
+  }
+
+  const api = { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Portrait3D = api;
 })(this);
