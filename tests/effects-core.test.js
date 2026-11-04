@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
   scrambleText, easeOutCubic, easeOutQuart, easeInOutQuad, loaderState, formatCount, runsFrame, litPercent,
-  londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity
+  londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, frameDt, createLoop
 } = require("../public/effects-core.js");
 
 const near = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
@@ -276,4 +276,92 @@ test("decayVelocity loses 10% per frame", () => {
 
 test("decayVelocity loses 10% twice with dt = 2", () => {
   assert.ok(near(decayVelocity(10, 2), 8.1));
+});
+
+test("frameDt measures elapsed time in 60fps frames", () => {
+  assert.ok(near(frameDt(1000 / 60), 1));
+  assert.ok(near(frameDt(1000 / 30), 2));
+});
+
+test("frameDt is capped at 3 frames", () => {
+  assert.equal(frameDt(500), 3);
+});
+
+test("frameDt never goes below 0", () => {
+  assert.equal(frameDt(-4), 0);
+});
+
+// A fake requestAnimationFrame: `tick(now)` runs the frame the loop asked for.
+function fakeFrames() {
+  let pending = null, requests = 0;
+  return {
+    request: fn => { pending = fn; requests++; },
+    tick: now => { const fn = pending; pending = null; fn(now); },
+    get pending() { return pending !== null; },
+    get requests() { return requests; }
+  };
+}
+
+test("createLoop calls each callback once a frame with dt in frame units and the time", () => {
+  const frames = fakeFrames(), calls = [];
+  const loop = createLoop(frames.request, () => {});
+  loop.add((dt, now) => calls.push([dt, now]));
+  frames.tick(1000);
+  frames.tick(1000 + 2000 / 60);
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[0], [1, 1000]);
+  assert.ok(near(calls[1][0], 2));
+});
+
+test("createLoop drops a callback that throws, reports it once and keeps the others running", () => {
+  const frames = fakeFrames(), errors = [];
+  let good = 0;
+  const loop = createLoop(frames.request, e => errors.push(e.message));
+  loop.add(() => { throw new Error("boom"); });
+  loop.add(() => { good++; });
+  frames.tick(0);
+  frames.tick(16);
+  assert.deepEqual(errors, ["boom"]);
+  assert.equal(good, 2);
+});
+
+test("createLoop stops asking for frames when no callback is left", () => {
+  const frames = fakeFrames(), fn = () => {};
+  const loop = createLoop(frames.request, () => {});
+  loop.add(fn);
+  frames.tick(0);
+  loop.remove(fn);
+  frames.tick(16);
+  assert.equal(frames.pending, false);
+});
+
+test("createLoop starts again on add after stopping, with a fresh dt of 1", () => {
+  const frames = fakeFrames(), dts = [], fn = () => {};
+  const loop = createLoop(frames.request, () => {});
+  loop.add(fn);
+  frames.tick(0);
+  loop.remove(fn);
+  frames.tick(16);
+  loop.add(dt => dts.push(dt));
+  frames.tick(5000);
+  assert.deepEqual(dts, [1]);
+});
+
+test("createLoop asks for one frame however many callbacks are added", () => {
+  const frames = fakeFrames();
+  const loop = createLoop(frames.request, () => {});
+  loop.add(() => {});
+  loop.add(() => {});
+  assert.equal(frames.requests, 1);
+});
+
+test("createLoop skips a callback removed earlier in the same frame", () => {
+  const frames = fakeFrames();
+  let ran = false;
+  const loop = createLoop(frames.request, () => {});
+  const second = () => { ran = true; };
+  loop.add(() => loop.remove(second));
+  loop.add(second);
+  frames.tick(0);
+  assert.equal(ran, false);
 });

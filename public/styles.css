@@ -197,6 +197,28 @@ html:has(> body.home-page) { scroll-behavior: smooth; }
 .home-page .hp-foot nav { gap: 24px; }
 .home-page .hp-foot a { padding-block: 6px; }
 
+/* 0 Intro loader: created by effects.js, which slides it up with .is-out */
+.home-page .hp-loader { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; justify-content: space-between; padding: 20px var(--home-gutter-r) 28px var(--home-gutter-l); background: var(--bg); font: 400 13px/normal var(--mono); color: var(--muted-2); cursor: pointer; transition: transform 1s var(--ease-wipe); }
+.home-page .hp-loader.is-out { transform: translateY(-100%); }
+.home-page .hp-loader-row { display: flex; justify-content: space-between; gap: 16px; }
+.home-page .hp-loader-foot { align-items: flex-end; flex-wrap: wrap; gap: 24px; }
+.home-page .hp-loader-logs { display: flex; flex-direction: column; gap: 14px; }
+.home-page .hp-loader pre { margin: 0; font: inherit; }
+.home-page .hp-loader-log { min-height: 4.5em; }
+.home-page .hp-loader-bar { color: var(--ink); }
+.home-page .hp-loader-num { font: 300 clamp(96px, 18vw, 280px)/.78 var(--display); letter-spacing: -.05em; color: var(--ink); }
+
+/* Motion start states: only under the classes the <head> script adds, so the page shows without effects.js.
+   html.intro covers the page until the loader exists; effects.js adds .hero-in to <html> and .is-in to [data-io]. */
+html.intro body.home-page::before { content: ""; position: fixed; inset: 0; z-index: 90; background: var(--bg); }
+html.motion .home-page [data-line] { transform: translateY(110%); }
+html.motion.hero-in .home-page [data-line] { transform: none; transition: transform 1.4s var(--ease) .12s; }
+html.motion.hero-in .home-page .hp-mask-2 [data-line] { transition-delay: .21s; }
+html.motion.hero-in .home-page .hp-mask-sub [data-line] { transition-delay: .3s; }
+html.motion .home-page [data-io] { opacity: 0; transform: translateY(48px); }
+html.motion .home-page [data-io].is-in { opacity: 1; transform: none; transition: opacity 1.1s var(--ease), transform 1.3s var(--ease); }
+html.motion .home-page .hp-row[data-io].is-in { transition: opacity 1.1s var(--ease), transform 1.3s var(--ease), background-color .5s var(--ease), color .5s var(--ease), padding .6s var(--ease); }
+
 @media (hover: hover) {
   .home-page a:not([data-plain]):hover { color: var(--acc); }
   .home-page .hp-btn:hover { background-color: var(--acc); border-color: var(--acc); color: var(--bg); }
@@ -208,6 +230,7 @@ html:has(> body.home-page) { scroll-behavior: smooth; }
 @media (pointer: coarse) {
   .home-page .hp-head a, .home-page .hp-foot a, .home-page .hp-sec-aside a { display: inline-flex; align-items: center; min-height: 44px; }
   .home-page .hp-ul { display: inline-flex; align-items: flex-end; min-height: 44px; }
+  .home-page .hp-sec-aside { align-items: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {

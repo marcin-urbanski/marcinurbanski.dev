@@ -118,9 +118,68 @@ test("the page has no inline styles", () => {
   assert.doesNotMatch(html, /\sstyle=/);
 });
 
-test("only site.js and portrait.js are loaded, in that order", () => {
+test("scripts load in the plan's order: effects-core, effects, site, portrait", () => {
   const srcs = [...html.matchAll(/<script[^>]*src="([^"]+)"/g)].map(m => m[1]);
-  assert.deepEqual(srcs, ["/site.js", "/portrait.js"]);
+  assert.deepEqual(srcs, ["/effects-core.js", "/effects.js", "/site.js", "/portrait.js"]);
+});
+
+// The inline <head> script, run against a stub page: it returns the classes on <html> and lets the test fire timers.
+const headScript = (html.match(/<head>[\s\S]*?<script>([\s\S]*?)<\/script>[\s\S]*?<\/head>/) || [])[1];
+function runHead({ reduce = false, seen = null, storageThrows = false } = {}) {
+  const classes = new Set(), timers = [];
+  const documentElement = {
+    dataset: {},
+    classList: { add: (...c) => c.forEach(x => classes.add(x)), remove: (...c) => c.forEach(x => classes.delete(x)) }
+  };
+  const sessionStorage = { getItem: k => { if (storageThrows) throw new Error("denied"); return k === LOADER_KEY ? seen : null; } };
+  require("node:vm").runInNewContext(headScript, {
+    document: { documentElement }, sessionStorage,
+    matchMedia: q => ({ matches: reduce && q === "(prefers-reduced-motion: reduce)" }),
+    setTimeout: (fn, ms) => timers.push({ fn, ms })
+  });
+  return { classes, timers, documentElement };
+}
+const LOADER_KEY = "loader-seen";
+
+test("the head script runs before the stylesheet loads", () => {
+  assert.ok(headScript, "an inline script in <head>");
+  assert.ok(html.indexOf(headScript) < html.indexOf('href="/styles.css"'));
+});
+
+test("the head script adds motion and intro on a first visit", () => {
+  assert.deepEqual([...runHead().classes].sort(), ["intro", "motion"]);
+});
+
+test("the head script skips the loader once the tab has seen it", () => {
+  assert.deepEqual([...runHead({ seen: "1" }).classes], ["motion"]);
+});
+
+test("the head script runs the loader when session storage throws", () => {
+  assert.deepEqual([...runHead({ storageThrows: true }).classes].sort(), ["intro", "motion"]);
+});
+
+test("the head script adds nothing under reduced motion", () => {
+  assert.equal(runHead({ reduce: true }).classes.size, 0);
+});
+
+test("the head script's 4s failsafe removes motion and intro when effects.js has not taken over", () => {
+  const { classes, timers } = runHead();
+  const failsafe = timers.find(t => t.ms === 4000);
+  assert.ok(failsafe, "a 4000ms timer");
+  failsafe.fn();
+  assert.equal(classes.size, 0);
+});
+
+test("the head script's failsafe leaves the classes once effects.js has taken over", () => {
+  const { classes, timers, documentElement } = runHead();
+  documentElement.dataset.fx = "on";
+  timers.find(t => t.ms === 4000).fn();
+  assert.deepEqual([...classes].sort(), ["intro", "motion"]);
+});
+
+test("effects.js reads and writes the same loader flag as the head script", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/effects.js"), "utf8");
+  assert.ok(js.includes(`"${LOADER_KEY}"`));
 });
 
 test("the old home-only rules are gone from the stylesheet", () => {
@@ -141,6 +200,11 @@ test("header and footer links are at least 44px tall on touch screens", () => {
     const min = rule[2].match(/min-height:\s*(\d+)px/);
     assert.ok(min && Number(min[1]) >= 44, `${sel} min-height`);
   }
+});
+
+test("the writing label and its rss link share a centre line on touch screens", () => {
+  const block = css.match(/@media \(pointer: coarse\) \{([\s\S]*?)\n\}/);
+  assert.match(block[1], /\.home-page \.hp-sec-aside \{ align-items: center; \}/);
 });
 
 test("the face canvas has one rule: absolute, inset 0 at every width", () => {

@@ -4,6 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Marcin Urbanski</title>
+<script>
+// Start states for effects.js: "motion" unless reduced motion, "intro" too while this tab has not seen the loader.
+// If effects.js has not taken over (data-fx="on") within 4s, show the page as it is.
+(function (root) {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var intro = true;
+  try { intro = !sessionStorage.getItem("loader-seen"); } catch (e) {}
+  root.classList.add("motion");
+  if (intro) root.classList.add("intro");
+  setTimeout(function () { if (root.dataset.fx !== "on") root.classList.remove("intro", "motion"); }, 4000);
+})(document.documentElement);
+</script>
 <meta name="description" content="Designer turned developer. I build my own apps with AI agents and test what actually makes them reliable.">
 <link rel="canonical" href="https://marcinurbanski.dev/">
 <link rel="alternate" type="application/rss+xml" title="Marcin Urbanski" href="https://marcinurbanski.dev/rss.xml">
@@ -183,6 +195,8 @@ specs/          review/</pre>
   <a href="#top" data-scramble>back to top ↑</a>
 </footer>
 
+<script src="/effects-core.js"></script>
+<script src="/effects.js"></script>
 <script src="/site.js"></script>
 <script src="/portrait.js"></script>
 </body>

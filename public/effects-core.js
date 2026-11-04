@@ -92,9 +92,34 @@
   // Scroll velocity loses 10% a frame (.dc.html:436).
   const decayVelocity = (v, dt) => v * .9 ** dt;
 
+  // Elapsed time in 60fps frames, the `dt` every per-frame function takes; capped at 3 after a stall.
+  const frameDt = elapsedMs => clamp(elapsedMs / (1000 / 60), 0, 3);
+
+  // The page's one frame loop (window.SiteLoop): callbacks get (dt, now) every frame. One that throws is
+  // dropped and reported once through `onError`; the others keep running. With no callbacks left the loop
+  // stops asking for frames, and its first frame after a (re)start has dt 1.
+  function createLoop(requestFrame, onError) {
+    const fns = new Set();
+    let running = false, last = null;
+    function frame(now) {
+      const dt = last === null ? 1 : frameDt(now - last);
+      last = now;
+      for (const fn of [...fns]) {
+        if (!fns.has(fn)) continue;
+        try { fn(dt, now); } catch (e) { fns.delete(fn); onError(e); }
+      }
+      if (fns.size) requestFrame(frame);
+      else { running = false; last = null; }
+    }
+    return {
+      add(fn) { fns.add(fn); if (!running) { running = true; requestFrame(frame); } },
+      remove(fn) { fns.delete(fn); }
+    };
+  }
+
   const api = {
     scrambleText, easeOutCubic, easeOutQuart, easeInOutQuad, loaderState, formatCount, runsFrame, litPercent,
-    londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity
+    londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, frameDt, createLoop
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.EffectsCore = api;
