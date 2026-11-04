@@ -238,7 +238,12 @@
       const y = by[i] - sy;
       if (y < -12 || y > VH + 12) continue;
       bctx.globalAlpha = .16 + .7 * near;
-      bctx.fillText(near > .8 ? cellChar(k, t) : BUB[chr[i]], x, y);
+      if (near <= .8) { bctx.fillText(BUB[chr[i]], x, y); continue; }
+      // Close in, it shows its cell's character, dimmed like the face under a headline line.
+      const under = inRects(tx, ty - heroTop, zones, 12, 10);
+      if (under) bctx.fillStyle = MID;
+      bctx.fillText(cellChar(k, t), x, y);
+      if (under) bctx.fillStyle = INK;
     }
     bctx.globalAlpha = 1;
   }
