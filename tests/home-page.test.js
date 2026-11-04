@@ -118,9 +118,9 @@ test("the page has no inline styles", () => {
   assert.doesNotMatch(html, /\sstyle=/);
 });
 
-test("scripts load in the plan's order: effects-core, effects, site, portrait", () => {
+test("scripts load in the plan's order: effects-core, effects, site, portrait-3d, portrait", () => {
   const srcs = [...html.matchAll(/<script[^>]*src="([^"]+)"/g)].map(m => m[1]);
-  assert.deepEqual(srcs, ["/effects-core.js", "/effects.js", "/site.js", "/portrait.js"]);
+  assert.deepEqual(srcs, ["/effects-core.js", "/effects.js", "/site.js", "/portrait-3d.js", "/portrait.js"]);
 });
 
 // The inline <head> script, run against a stub page: it returns the classes on <html> and lets the test fire timers.
