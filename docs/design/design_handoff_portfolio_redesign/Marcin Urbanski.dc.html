@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&amp;family=Geist+Mono:wght@300..500&amp;family=Newsreader:ital,opsz,wght@1,6..72,300..500&amp;display=swap" rel="stylesheet">
+<meta name="theme-color" content="#0a0a09">
+<style>
+html,body{margin:0;background:#0a0a09;color:#ecebe6}
+html{scroll-behavior:smooth}
+body{font-family:Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+*{box-sizing:border-box}
+a{color:#ecebe6;text-decoration:none}
+a:not([data-plain]):hover{color:var(--acc,#ff6b2c)}
+::selection{background:var(--acc,#ff6b2c);color:#0a0a09}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:70;opacity:.07;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="--acc:#ff6b2c;position:relative;background:#0a0a09;color:#ecebe6;font-family:Geist,system-ui,sans-serif;min-height:100vh">
+
+  <div ref="{{ loaderRef }}" style="position:fixed;inset:0;z-index:90;background:#0a0a09;display:flex;flex-direction:column;justify-content:space-between;padding:20px clamp(20px,3vw,40px) 28px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;color:#8a8983;transition:transform 1s cubic-bezier(.76,0,.24,1);cursor:pointer">
+    <div style="display:flex;justify-content:space-between;gap:16px"><span>marcinurbanski.dev</span><span>running checks</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <pre ref="{{ loaderLogRef }}" style="margin:0;font:inherit;color:#8a8983;min-height:4.5em"></pre>
+        <pre ref="{{ loaderBarRef }}" style="margin:0;font:inherit;color:#ecebe6">[........................]</pre>
+      </div>
+      <span ref="{{ loaderNumRef }}" style="font-family:Geist,sans-serif;font-weight:300;font-size:clamp(96px,18vw,280px);line-height:.78;letter-spacing:-.05em;color:#ecebe6">000</span>
+    </div>
+  </div>
+
+  <div ref="{{ cursorRef }}" aria-hidden="true" style="position:fixed;left:0;top:0;width:10px;height:10px;z-index:80;pointer-events:none;background:var(--acc);border:1px solid var(--acc);transform:translate3d(-100px,-100px,0);transition:background-color .3s,border-radius .3s"></div>
+
+  <div ref="{{ previewRef }}" aria-hidden="true" style="position:fixed;left:0;top:0;z-index:60;width:320px;pointer-events:none;opacity:0;transition:opacity .35s ease;background:#121210;border:1px solid #2c2c28;padding:14px;font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:#a3a29c">
+    <div data-pv="skills" style="display:none">
+      <div style="display:flex;justify-content:space-between;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid #2c2c28"><span>~/claude-skills</span><span style="color:var(--acc)">●</span></div>
+      <pre style="margin:0;font:inherit;line-height:1.7;color:#ecebe6">$ ls
+test-first/     verification/
+specs/          review/</pre>
+    </div>
+    <div data-pv="timerabbit" style="display:none">
+      <div style="height:190px;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(135deg,#1a1a17 0 8px,#141412 8px 16px);color:#8a8983">timerabbit — app screenshot</div>
+      <div style="display:flex;justify-content:space-between;margin-top:12px"><span>gettimerabbit.com</span><span>macOS</span></div>
+    </div>
+  </div>
+
+  <header style="position:fixed;top:0;left:0;right:0;z-index:50;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 28px;padding:18px clamp(20px,3vw,40px) 28px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;background:linear-gradient(#0a0a09 20%,rgba(10,10,9,0));pointer-events:none">
+    <a href="#top" data-scramble="" style="pointer-events:auto;padding:6px 0">marcinurbanski.dev</a>
+    <nav style="display:flex;gap:24px;pointer-events:auto">
+      <a href="#work" data-scramble="" style="padding:6px 0">work</a>
+      <a href="#writing" data-scramble="" style="padding:6px 0">writing</a>
+      <a href="#contact" data-scramble="" style="padding:6px 0">contact</a>
+    </nav>
+    <div style="display:flex;gap:10px;color:#8a8983"><span>Southampton</span><span ref="{{ clockRef }}" style="color:#ecebe6;font-variant-numeric:tabular-nums">--:--:--</span></div>
+  </header>
+
+  <section id="top" ref="{{ heroRef }}" data-screen-label="Hero" style="position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;padding:120px clamp(20px,3vw,40px) 24px;overflow:hidden">
+    <canvas ref="{{ heroCanvasRef }}" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>
+    <div style="position:relative;pointer-events:none">
+      <p data-hi="" style="font-family:'Geist Mono',ui-monospace,monospace;font-size:14px;color:var(--acc);margin:0 0 clamp(20px,3vw,36px);min-height:1.4em">Hi, I'm Marcin Urbanski.</p>
+      <h1 style="margin:0;font-weight:400">
+        <span style="display:block;overflow:hidden;padding-bottom:.04em"><span data-line="" style="display:block;font-size:clamp(52px,9.6vw,176px);line-height:.9;letter-spacing:-.05em">Designer turned</span></span>
+        <span style="display:block;overflow:hidden;padding-bottom:.06em"><span data-line="" style="display:block;font-size:clamp(52px,9.6vw,176px);line-height:.9;letter-spacing:-.05em">developer.</span></span>
+        <span style="display:block;overflow:hidden;margin-top:clamp(20px,2.6vw,40px)"><span data-line="" style="display:block;font-size:clamp(22px,2.5vw,40px);line-height:1.18;letter-spacing:-.02em;max-width:24em;text-wrap:pretty">I build my own apps with AI agents and <em style="font-family:Newsreader,serif;font-weight:400;color:var(--acc)">test what actually makes them reliable.</em></span></span>
+      </h1>
+    </div>
+    <div style="position:relative;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px 24px;margin-top:clamp(40px,8vh,96px);padding-top:16px;border-top:1px solid #262622;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;color:#8a8983">
+      <span>web, since 2008</span>
+      <span>Southampton, UK</span>
+      <span>scroll ↓</span>
+    </div>
+  </section>
+
+  <section data-screen-label="Approach" style="display:flex;flex-wrap:wrap;gap:32px clamp(24px,4vw,64px);padding:clamp(120px,18vh,220px) clamp(20px,3vw,40px) clamp(100px,14vh,180px)">
+    <span style="flex:1 1 200px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;color:#8a8983;padding-top:.8em">(01) — approach</span>
+    <p data-words-host="" style="flex:4 1 560px;margin:0;font-size:clamp(28px,3.6vw,60px);line-height:1.1;letter-spacing:-.03em;font-weight:400;text-wrap:pretty"><span data-words="" style="color:transparent;-webkit-background-clip:text;background-clip:text;background-image:linear-gradient(90deg,#ecebe6 100%,#3d3d38 100%)">Ten years of graphic and web design, then development: WordPress, WooCommerce and Laravel for UK clients, checkout flows and performance work. Now I apply the same habit to agents. <em style="font-family:Newsreader,serif;font-weight:400">Reproduce, measure, fix the cause.</em></span></p>
+  </section>
+
+  <div ref="{{ marqueeRef }}" aria-hidden="true" style="overflow:hidden;border-top:1px solid #262622;border-bottom:1px solid #262622;padding:clamp(18px,2.6vw,36px) 0;white-space:nowrap;user-select:none">
+    <div data-track="" style="display:inline-flex;will-change:transform">
+      <span style="display:inline-flex;align-items:center;gap:.32em;padding-right:.32em;font-size:clamp(64px,11vw,200px);line-height:1;letter-spacing:-.045em"><span>Reproduce</span><span style="color:var(--acc);font-family:'Geist Mono',monospace;font-weight:300">/</span><em style="font-family:Newsreader,serif;font-weight:300">measure</em><span style="color:var(--acc);font-family:'Geist Mono',monospace;font-weight:300">/</span><span>fix the cause</span><span style="color:var(--acc);font-family:'Geist Mono',monospace;font-weight:300">/</span></span>
+      <span style="display:inline-flex;align-items:center;gap:.32em;padding-right:.32em;font-size:clamp(64px,11vw,200px);line-height:1;letter-spacing:-.045em"><span>Reproduce</span><span style="color:var(--acc);font-family:'Geist Mono',monospace;font-weight:300">/</span><em style="font-family:Newsreader,serif;font-weight:300">measure</em><span style="color:var(--acc);font-family:'Geist Mono',monospace;font-weight:300">/</span><span>fix the cause</span><span style="color:var(--acc);font-family:'Geist Mono',monospace;font-weight:300">/</span></span>
+    </div>
+  </div>
+
+  <section id="work" data-screen-label="Work" style="padding:clamp(100px,14vh,180px) clamp(20px,3vw,40px) clamp(60px,8vh,100px)">
+    <div data-io="" style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;padding-bottom:28px;border-bottom:1px solid #262622">
+      <h2 data-scramble-group="" style="margin:0;font-weight:400;font-size:clamp(60px,11vw,200px);line-height:.84;letter-spacing:-.055em"><span data-scramble-part="" style="display:block">Selected</span><span data-scramble-part="" style="display:block">work</span></h2>
+      <span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;color:#8a8983">(02) — 3 projects</span>
+    </div>
+
+    <article data-io="" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:clamp(40px,5vw,88px);padding:clamp(44px,6vw,96px) 0;border-bottom:1px solid #262622">
+      <div style="display:flex;flex-direction:column;gap:28px;justify-content:space-between">
+        <div style="display:flex;gap:20px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;color:#8a8983"><span style="color:var(--acc)">01</span><span>study · 2026-11-03</span></div>
+        <h3 style="margin:0;font-weight:400;font-size:clamp(34px,4.2vw,68px);line-height:1;letter-spacing:-.035em;text-wrap:balance"><a href="https://marcinurbanski.dev/writing/skip-the-tests/">What happens when you tell a coding agent to <em style="font-family:Newsreader,serif">skip the tests?</em></a></h3>
+        <p style="margin:0;font-size:18px;line-height:1.55;color:#a3a29c;max-width:32em;text-wrap:pretty">Opus, Sonnet and Haiku, four setups, three requests, 30 runs each. A written rule, installed as a skill as well, held against "skip the tests". Nothing I tried held when the user narrowed the scope themselves.</p>
+        <a data-plain="" href="https://marcinurbanski.dev/writing/skip-the-tests/" style="align-self:flex-start;display:flex;align-items:center;gap:14px;min-height:52px;padding:0 22px;border:1px solid #ecebe6;color:#ecebe6;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;transition:background-color .3s,color .3s,border-color .3s" style-hover="background-color:var(--acc);border-color:var(--acc);color:#0a0a09"><span>read the study</span><span>→</span></a>
+      </div>
+      <div data-runs-host="" style="display:flex;flex-direction:column;gap:22px;justify-content:flex-end">
+        <div style="display:flex;align-items:baseline;gap:14px"><span data-count="1080" style="font-size:clamp(80px,10.5vw,184px);font-weight:300;letter-spacing:-.06em;line-height:.82;font-variant-numeric:tabular-nums">1,080</span><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:14px;color:var(--acc)">runs</span></div>
+        <div style="display:flex;gap:clamp(14px,2vw,28px);flex-wrap:wrap">
+          <div style="display:flex;flex-direction:column;gap:10px"><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:#8a8983">opus</span><pre data-runs="" style="margin:0;font-family:'Geist Mono',ui-monospace,monospace;font-size:10px;line-height:1.3;color:#3d3d38"></pre></div>
+          <div style="display:flex;flex-direction:column;gap:10px"><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:#8a8983">sonnet</span><pre data-runs="" style="margin:0;font-family:'Geist Mono',ui-monospace,monospace;font-size:10px;line-height:1.3;color:#3d3d38"></pre></div>
+          <div style="display:flex;flex-direction:column;gap:10px"><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:#8a8983">haiku</span><pre data-runs="" style="margin:0;font-family:'Geist Mono',ui-monospace,monospace;font-size:10px;line-height:1.3;color:#3d3d38"></pre></div>
+        </div>
+        <span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:#8a8983">3 models × 4 setups × 3 requests × 30 runs</span>
+      </div>
+    </article>
+
+    <a data-plain="" data-io="" data-preview="skills" href="https://github.com/marcin-urbanski/claude-skills" target="_blank" rel="noopener" style="display:flex;flex-wrap:wrap;align-items:baseline;gap:14px 32px;padding-top:clamp(30px,3.6vw,52px);padding-bottom:clamp(30px,3.6vw,52px);padding-left:0;padding-right:0;border-bottom:1px solid #262622;color:#ecebe6;transition:background-color .5s cubic-bezier(.16,1,.3,1),color .5s cubic-bezier(.16,1,.3,1),padding .6s cubic-bezier(.16,1,.3,1)" style-hover="background-color:#ecebe6;color:#0a0a09;padding-left:24px;padding-right:24px">
+      <span style="flex:0 0 40px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;opacity:.62">02</span>
+      <span style="flex:1 1 360px;font-size:clamp(38px,5.2vw,88px);line-height:.95;letter-spacing:-.045em">claude-skills</span>
+      <span style="flex:1 1 300px;font-size:17px;line-height:1.5;opacity:.74;max-width:30em;text-wrap:pretty">The process skills I run Claude Code with: test-first, verification, specs and independent review, each change checked with evals.</span>
+      <span style="flex:0 0 auto;display:flex;gap:16px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;opacity:.62"><span>open source</span><span>↗</span></span>
+    </a>
+
+    <a data-plain="" data-io="" data-preview="timerabbit" href="https://gettimerabbit.com" target="_blank" rel="noopener" style="display:flex;flex-wrap:wrap;align-items:baseline;gap:14px 32px;padding-top:clamp(30px,3.6vw,52px);padding-bottom:clamp(30px,3.6vw,52px);padding-left:0;padding-right:0;border-bottom:1px solid #262622;color:#ecebe6;transition:background-color .5s cubic-bezier(.16,1,.3,1),color .5s cubic-bezier(.16,1,.3,1),padding .6s cubic-bezier(.16,1,.3,1)" style-hover="background-color:#ecebe6;color:#0a0a09;padding-left:24px;padding-right:24px">
+      <span style="flex:0 0 40px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;opacity:.62">03</span>
+      <span style="flex:1 1 360px;font-size:clamp(38px,5.2vw,88px);line-height:.95;letter-spacing:-.045em">TimeRabbit</span>
+      <span style="flex:1 1 300px;font-size:17px;line-height:1.5;opacity:.74;max-width:30em;text-wrap:pretty">A native macOS time tracker, written by agents under my rules, tests and review.</span>
+      <span style="flex:0 0 auto;display:flex;gap:16px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;opacity:.62"><span>app · macOS</span><span>↗</span></span>
+    </a>
+  </section>
+
+  <section id="writing" data-screen-label="Writing" style="padding:clamp(80px,12vh,160px) clamp(20px,3vw,40px)">
+    <div data-io="" style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;padding-bottom:28px;border-bottom:1px solid #262622">
+      <h2 data-scramble-group="" style="margin:0;font-weight:400;font-size:clamp(60px,11vw,200px);line-height:.84;letter-spacing:-.055em"><span data-scramble-part="" style="display:block">Writing</span></h2>
+      <div style="display:flex;gap:24px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;color:#8a8983"><span>(03) — notes &amp; studies</span><a href="https://marcinurbanski.dev/rss.xml" data-scramble="">rss</a></div>
+    </div>
+    <a data-plain="" data-io="" href="https://marcinurbanski.dev/writing/skip-the-tests/" style="display:flex;flex-wrap:wrap;align-items:baseline;gap:12px 32px;padding-top:clamp(26px,3vw,40px);padding-bottom:clamp(26px,3vw,40px);padding-left:0;padding-right:0;border-bottom:1px solid #262622;color:#ecebe6;transition:background-color .5s cubic-bezier(.16,1,.3,1),color .5s cubic-bezier(.16,1,.3,1),padding .6s cubic-bezier(.16,1,.3,1)" style-hover="background-color:#ecebe6;color:#0a0a09;padding-left:24px;padding-right:24px">
+      <span style="flex:0 0 120px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;opacity:.62">4 Nov 2026</span>
+      <span style="flex:1 1 420px;font-size:clamp(24px,2.6vw,40px);line-height:1.12;letter-spacing:-.025em;text-wrap:pretty">What happens when you tell a coding agent to skip the tests?</span>
+      <span style="flex:0 0 auto;display:flex;gap:16px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;opacity:.62"><span>8 min</span><span>→</span></span>
+    </a>
+  </section>
+
+  <section id="contact" data-screen-label="Contact" style="min-height:90svh;display:flex;flex-direction:column;justify-content:center;gap:clamp(28px,4vw,56px);padding:clamp(80px,12vh,160px) clamp(20px,3vw,40px)">
+    <span data-io="" style="font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;color:#8a8983">(04) — contact</span>
+    <p data-io="" style="margin:0;font-size:clamp(28px,3.6vw,60px);line-height:1.08;letter-spacing:-.03em;max-width:18em;text-wrap:balance">Questions about agents, evals or a project? <em style="font-family:Newsreader,serif;color:var(--acc)">Write to me.</em></p>
+    <a data-io="" data-scramble="" href="mailto:hello@marcinurbanski.dev" style="font-size:clamp(30px,6.6vw,128px);line-height:1;letter-spacing:-.05em;overflow-wrap:anywhere;padding-bottom:.1em;border-bottom:1px solid #262622">hello@marcinurbanski.dev</a>
+    <div data-io="" style="display:flex;flex-wrap:wrap;align-items:center;gap:16px 32px;font-size:17px;color:#a3a29c">
+      <button onClick="{{ copyEmail }}" style="display:flex;align-items:center;min-height:48px;padding:0 20px;background:transparent;border:1px solid #3d3d38;color:#ecebe6;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;cursor:pointer;transition:border-color .3s,color .3s" style-hover="border-color:var(--acc);color:var(--acc)"><span ref="{{ copyLabelRef }}">copy address</span></button>
+      <span>or find me on <a href="https://www.linkedin.com/in/marcin-urbanski-70761424/" target="_blank" rel="noopener" style="border-bottom:1px solid #3d3d38">LinkedIn</a> and <a href="https://github.com/marcin-urbanski" target="_blank" rel="noopener" style="border-bottom:1px solid #3d3d38">GitHub</a></span>
+    </div>
+  </section>
+
+  <footer data-screen-label="Footer" style="padding:24px clamp(20px,3vw,40px);border-top:1px solid #262622">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px 24px;font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;color:#8a8983">
+      <span>© 2026 Marcin Urbanski</span>
+      <div style="display:flex;gap:24px">
+        <a href="https://github.com/marcin-urbanski" data-scramble="" style="padding:6px 0">GitHub</a>
+        <a href="https://www.linkedin.com/in/marcin-urbanski-70761424/" data-scramble="" style="padding:6px 0">LinkedIn</a>
+        <a href="https://marcinurbanski.dev/rss.xml" data-scramble="" style="padding:6px 0">RSS</a>
+      </div>
+      <a href="#top" data-scramble="" style="padding:6px 0">back to top ↑</a>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#ecebe6&quot;,&quot;options&quot;:[&quot;#ff6b2c&quot;,&quot;#c6f432&quot;,&quot;#8fb3ff&quot;,&quot;#ecebe6&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;preloader&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;heroObject&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;portrait&quot;,&quot;torus&quot;,&quot;field only&quot;],&quot;default&quot;:&quot;portrait&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  rootRef = React.createRef(); heroRef = React.createRef(); heroCanvasRef = React.createRef(); footCanvasRef = React.createRef();
+  cursorRef = React.createRef(); clockRef = React.createRef(); marqueeRef = React.createRef(); loaderRef = React.createRef();
+  loaderNumRef = React.createRef(); loaderBarRef = React.createRef(); loaderLogRef = React.createRef(); copyLabelRef = React.createRef(); previewRef = React.createRef();
+  p = { x: -1e4, y: -1e4, last: -1e9 }; m = { x: -1e4, y: -1e4 }; cur = { x: -100, y: -100, s: 10, hot: false };
+  pv = { x: 0, y: 0, on: false, snap: true }; vel = 0; dir = 1; rotA = 0.7; rotB = 0; tx = 0; ty = 0; mqx = 0;
+  vis = { hero: true, foot: false, marq: false }; cleanups = []; ios = [];
+
+  renderVals() {
+    return {
+      rootRef: this.rootRef, heroRef: this.heroRef, heroCanvasRef: this.heroCanvasRef, footCanvasRef: this.footCanvasRef,
+      cursorRef: this.cursorRef, clockRef: this.clockRef, marqueeRef: this.marqueeRef, loaderRef: this.loaderRef,
+      loaderNumRef: this.loaderNumRef, loaderBarRef: this.loaderBarRef, loaderLogRef: this.loaderLogRef,
+      copyLabelRef: this.copyLabelRef, previewRef: this.previewRef, copyEmail: this.copyEmail
+    };
+  }
+
+  copyEmail = () => {
+    try { navigator.clipboard && navigator.clipboard.writeText('hello@marcinurbanski.dev').catch(() => {}); } catch (e) {}
+    const el = this.copyLabelRef.current; if (!el) return;
+    this.scramble(el, 'copied to clipboard', 500);
+    clearTimeout(this._ct); this._ct = setTimeout(() => this.scramble(el, 'copy address', 500), 2000);
+  };
+
+  componentDidMount() {
+    const root = this.rootRef.current; if (!root) return;
+    this.reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.touch = matchMedia('(hover: none)').matches;
+    this.applyAccent();
+    const on = (t, e, f, o) => { t.addEventListener(e, f, o); this.cleanups.push(() => t.removeEventListener(e, f, o)); };
+    this.on = on;
+    on(window, 'pointermove', e => { if (e.pointerType === 'touch') return; this.p.x = e.clientX; this.p.y = e.clientY; this.p.last = performance.now(); }, { passive: true });
+    let lastY = window.scrollY;
+    on(window, 'scroll', () => { const y = window.scrollY, d = y - lastY; lastY = y; this.vel += d; if (d) this.dir = d > 0 ? 1 : -1; this.updateWords(); }, { passive: true });
+    on(window, 'resize', () => this.safeResize());
+
+    this.setupClock(); this.setupScramble(root); this.setupReveal(root); this.setupRuns(root); this.setupCursor(root); this.setupPreview(root);
+    this.wordEls = [...root.querySelectorAll('[data-words]')];
+    this.track = this.marqueeRef.current && this.marqueeRef.current.querySelector('[data-track]');
+
+    const vio = new IntersectionObserver(es => es.forEach(e => { this.vis[e.target.dataset.vis] = e.isIntersecting; }));
+    [[this.heroRef.current, 'hero'], [this.footCanvasRef.current, 'foot'], [this.marqueeRef.current, 'marq']].forEach(([el, k]) => { if (el) { el.dataset.vis = k; vio.observe(el); } });
+    this.ios.push(vio);
+
+    if (!this.reduce) {
+      root.querySelectorAll('[data-line]').forEach(el => { el.style.transform = 'translateY(110%)'; });
+      const c = this.heroCanvasRef.current; if (c) c.style.opacity = '0';
+    }
+    this.img = new Image(); this.img.onload = () => { this.buildPortrait(); if (this.reduce) this.drawHero(0, 0); }; this.img.src = 'assets/portrait-ascii.png';
+    this.runLoader();
+    this.t0 = this.last = performance.now();
+    const loop = now => { this.raf = requestAnimationFrame(loop); try { this.frame(now); } catch (e) {} };
+    this.raf = requestAnimationFrame(loop);
+    this.safeResize(); this.updateWords();
+    document.fonts && document.fonts.ready.then(() => this.safeResize());
+    if (window.ResizeObserver) {
+      let rt; const ro = new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => this.safeResize(), 60); });
+      [this.heroRef.current, this.footCanvasRef.current && this.footCanvasRef.current.parentElement].forEach(el => el && ro.observe(el));
+      this.ios.push(ro);
+    }
+  }
+  safeResize() { try { this.resize(); } catch (e) {} }
+
+  componentWillUnmount() {
+    cancelAnimationFrame(this.raf); clearInterval(this.clockT); clearTimeout(this._ct);
+    this.cleanups.forEach(f => f()); this.ios.forEach(o => o.disconnect());
+  }
+  componentDidUpdate() { this.applyAccent(); if (this.reduce) this.resize(); }
+  applyAccent() { this.acc = this.props.accent || '#ff6b2c'; const r = this.rootRef.current; if (r) r.style.setProperty('--acc', this.acc); }
+
+  setupClock() {
+    const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    const tick = () => { const el = this.clockRef.current; if (el) el.textContent = fmt.format(new Date()); };
+    tick(); this.clockT = setInterval(tick, 1000);
+  }
+
+  scramble(el, to, dur = 650) {
+    if (this.reduce) { el.textContent = to; return; }
+    const from = el.textContent, len = Math.max(from.length, to.length), G = '!<>-_\\/[]{}=+*^?#01';
+    const s = performance.now(); cancelAnimationFrame(el._sr);
+    const step = now => {
+      const p = Math.max(0, Math.min(1, (now - s) / dur)); let out = '';
+      for (let i = 0; i < len; i++) {
+        const ti = (i / len) * 0.65;
+        if (p >= ti + 0.35) out += to[i] || '';
+        else if (p >= ti) out += to[i] === ' ' ? ' ' : G[(Math.random() * G.length) | 0];
+        else out += from[i] || '';
+      }
+      el.textContent = out;
+      if (p < 1) el._sr = requestAnimationFrame(step); else el.textContent = to;
+    };
+    el._sr = requestAnimationFrame(step);
+  }
+
+  setupScramble(root) {
+    root.querySelectorAll('[data-scramble]').forEach(el => {
+      el.dataset.txt = el.textContent;
+      this.on(el, 'mouseenter', () => this.scramble(el, el.dataset.txt));
+    });
+    root.querySelectorAll('[data-scramble-group]').forEach(g => {
+      const parts = [...g.querySelectorAll('[data-scramble-part]')];
+      parts.forEach(p => { p.dataset.txt = p.textContent; });
+      this.on(g, 'mouseenter', () => parts.forEach((p, i) => setTimeout(() => this.scramble(p, p.dataset.txt, 700), i * 90)));
+    });
+  }
+
+  setupReveal(root) {
+    const els = [...root.querySelectorAll('[data-io]')]; if (this.reduce) return;
+    els.forEach(el => { el.style.opacity = '0'; el.style.transform = 'translateY(48px)'; });
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (!e.isIntersecting) return; const el = e.target; io.unobserve(el);
+      el.style.transition = (el.style.transition ? el.style.transition + ',' : '') + 'opacity 1.1s cubic-bezier(.16,1,.3,1), transform 1.3s cubic-bezier(.16,1,.3,1)';
+      el.style.opacity = '1'; el.style.transform = 'none';
+    }), { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+    els.forEach(el => io.observe(el)); this.ios.push(io);
+
+    const counters = [...root.querySelectorAll('[data-count]')];
+    counters.forEach(el => { el.textContent = '0'; });
+    const cio = new IntersectionObserver(es => es.forEach(e => {
+      if (!e.isIntersecting) return; const el = e.target; cio.unobserve(el);
+      const target = +el.dataset.count, s = performance.now(), D = 2400;
+      const step = now => { const p = Math.max(0, Math.min(1, (now - s) / D)), k = 1 - Math.pow(1 - p, 4); el.textContent = Math.round(target * k).toLocaleString('en-GB'); if (p < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    }), { threshold: 0.4 });
+    counters.forEach(el => cio.observe(el)); this.ios.push(cio);
+  }
+
+  setupRuns(root) {
+    this.runEls = [...root.querySelectorAll('[data-runs]')];
+    this.renderRuns(this.reduce ? 1 : 0);
+    const host = root.querySelector('[data-runs-host]'); if (!host || this.reduce) return;
+    const io = new IntersectionObserver(es => {
+      if (!es[0].isIntersecting) return; io.disconnect();
+      const s = performance.now(), D = 3000;
+      const step = now => { const p = Math.max(0, Math.min(1, (now - s) / D)); this.renderRuns(p); if (p < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    }, { threshold: 0.35 });
+    io.observe(host); this.ios.push(io);
+  }
+
+  renderRuns(p) {
+    const acc = this.acc || '#ff6b2c';
+    this.runEls.forEach((el, mi) => {
+      const q = Math.max(0, Math.min(1, p * 1.2 - mi * 0.1)), e = q < .5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2;
+      const dn = Math.round(e * 360); let html = '';
+      for (let r = 0; r < 12; r++) {
+        if (r && r % 3 === 0) html += '\n';
+        const d = Math.max(0, Math.min(30, dn - r * 30));
+        html += '<span style="color:#ecebe6">' + '#'.repeat(d) + '</span>';
+        if (d < 30) html += (dn > r * 30 ? '<span style="color:' + acc + '">&gt;</span>' + '.'.repeat(29 - d) : '.'.repeat(30 - d));
+        if (r < 11) html += '\n';
+      }
+      el.innerHTML = html;
+    });
+  }
+
+  setupCursor(root) {
+    const c = this.cursorRef.current; if (!c) return;
+    if (this.touch) { c.style.display = 'none'; return; }
+    this.on(document, 'mouseover', e => { this.cur.hot = !!(e.target.closest && e.target.closest('a,button')); });
+    this.on(document, 'mouseleave', () => { this.p.x = -1e4; });
+  }
+
+  setupPreview(root) {
+    const panel = this.previewRef.current; if (!panel) return;
+    root.querySelectorAll('[data-preview]').forEach(el => {
+      this.on(el, 'mouseenter', () => {
+        if (this.touch) return;
+        panel.querySelectorAll('[data-pv]').forEach(c => { c.style.display = c.dataset.pv === el.dataset.preview ? 'block' : 'none'; });
+        if (!this.pv.on) this.pv.snap = true;
+        this.pv.on = true; panel.style.opacity = '1';
+      });
+      this.on(el, 'mouseleave', () => { this.pv.on = false; panel.style.opacity = '0'; });
+    });
+  }
+
+  updateWords() {
+    if (!this.wordEls) return; const vh = window.innerHeight;
+    this.wordEls.forEach(el => {
+      let pct = 100;
+      if (!this.reduce) {
+        const r = el.getBoundingClientRect();
+        const p = Math.max(0, Math.min(1, (vh * 0.88 - r.top) / (r.height + vh * 0.3)));
+        pct = p * 108 - 4;
+      }
+      el.style.backgroundImage = 'linear-gradient(90deg,#ecebe6 ' + (pct - 3) + '%,#3d3d38 ' + (pct + 3) + '%)';
+    });
+  }
+
+  runLoader() {
+    const L = this.loaderRef.current; if (!L) return;
+    if (this.reduce || this.props.preloader === false) { L.style.display = 'none'; this.intro(); return; }
+    const num = this.loaderNumRef.current, bar = this.loaderBarRef.current, log = this.loaderLogRef.current;
+    const lines = ['> reproduce', '> measure', '> fix the cause']; let shown = 0, done = false;
+    const s = performance.now(), D = 1700;
+    const finish = () => {
+      if (done) return; done = true;
+      L.style.transform = 'translateY(-100%)';
+      setTimeout(() => this.intro(), 250);
+      setTimeout(() => { L.style.display = 'none'; }, 1100);
+    };
+    L.addEventListener('click', finish, { once: true });
+    setTimeout(finish, D + 900);
+    const step = now => {
+      if (done) return;
+      const p = Math.max(0, Math.min(1, (now - s) / D)), k = 1 - Math.pow(1 - p, 3);
+      num.textContent = String(Math.round(k * 100)).padStart(3, '0');
+      const f = Math.round(k * 24); bar.textContent = '[' + '#'.repeat(f) + '.'.repeat(24 - f) + ']';
+      const want = Math.min(3, Math.floor(p * 3.6)); if (want > shown) { shown = want; log.textContent = lines.slice(0, shown).map(l => l + '  ok').join('\n'); }
+      if (p < 1) requestAnimationFrame(step); else setTimeout(finish, 220);
+    };
+    requestAnimationFrame(step);
+  }
+
+  intro() {
+    const root = this.rootRef.current; if (!root) return;
+    const c = this.heroCanvasRef.current;
+    this.bornAt = performance.now() + 450;
+    if (this.reduce) return;
+    if (c) { c.style.transition = 'opacity 2.2s ease'; c.style.opacity = '1'; }
+    root.querySelectorAll('[data-line]').forEach((el, i) => {
+      el.style.transition = 'transform 1.4s cubic-bezier(.16,1,.3,1) ' + (0.12 + i * 0.09) + 's';
+      requestAnimationFrame(() => requestAnimationFrame(() => { el.style.transform = 'translateY(0)'; }));
+    });
+    const hi = root.querySelector('[data-hi]');
+    if (hi) { const txt = hi.dataset.txt || hi.textContent; hi.dataset.txt = txt; hi.textContent = ''; setTimeout(() => this.scramble(hi, txt, 1000), 350); }
+  }
+
+  resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const hc = this.heroCanvasRef.current;
+    const hr = hc && hc.getBoundingClientRect();
+    if (hr && hr.width > 0 && hr.height > 0) {
+      const w = hr.width, h = hr.height;
+      hc.width = Math.round(w * dpr); hc.height = Math.round(h * dpr);
+      const ctx = hc.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const fs = w < 700 ? 10 : 13, cw = fs * 0.6, ch = fs * 1.22, cols = Math.ceil(w / cw), rows = Math.ceil(h / ch);
+      this.H = { c: hc, ctx, w, h, fs, cw, ch, cols, rows, lum: new Float32Array(cols * rows), zb: new Float32Array(cols * rows), b: [[], [], [], [], []] };
+      this.buildPortrait();
+    }
+    const fc = this.footCanvasRef.current;
+    const fw = fc ? fc.parentElement.clientWidth - parseFloat(getComputedStyle(fc.parentElement).paddingLeft) * 2 : 0;
+    if (fc && fw > 40) try {
+      const w = fw;
+      const fs = w < 700 ? 7 : 10, cw = fs * 0.6, ch = fs * 1.1;
+      const o = document.createElement('canvas'), oc = o.getContext('2d'); const word = 'URBANSKI';
+      oc.font = '700 100px Geist, sans-serif'; try { oc.letterSpacing = '-4px'; } catch (e) {}
+      const fz = 100 * w / oc.measureText(word).width * 0.995, h = Math.ceil(fz * 0.74);
+      o.width = Math.ceil(w); o.height = h;
+      oc.font = '700 ' + fz + 'px Geist, sans-serif'; try { oc.letterSpacing = (-0.04 * fz) + 'px'; } catch (e) {}
+      oc.fillStyle = '#fff'; oc.textBaseline = 'alphabetic'; oc.fillText(word, 0, fz * 0.725);
+      const data = oc.getImageData(0, 0, o.width, h).data, cols = Math.floor(w / cw), rows = Math.floor(h / ch), cells = [];
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const px = Math.min(o.width - 1, (c * cw + cw / 2) | 0), py = Math.min(h - 1, (r * ch + ch / 2) | 0);
+        if (data[(py * o.width + px) * 4 + 3] > 120) cells.push(c, r);
+      }
+      fc.style.aspectRatio = 'auto'; fc.style.height = h + 'px';
+      fc.width = Math.round(w * dpr); fc.height = Math.round(h * dpr);
+      const ctx = fc.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      this.F = { c: fc, ctx, w, h, fs, cw, ch, cells, b: [[], [], [], [], []] };
+    } catch (e) {}
+    if (this.track) this.mqHalf = this.track.scrollWidth / 2;
+    if (this.reduce) { this.drawHero(0, 0); this.drawFoot(0); }
+  }
+
+  frame(now) {
+    const dt = Math.min(3, (now - this.last) / 16.67); this.last = now; const t = (now - this.t0) / 1000;
+    this.vel *= Math.pow(0.9, dt);
+    const lerp = (a, b, k) => a + (b - a) * (1 - Math.pow(1 - k, dt));
+    let tx = this.p.x, ty = this.p.y;
+    if (tx < -1e3 || this.m.x < -1e3) { this.m.x = tx; this.m.y = ty; }
+    else { this.m.x = lerp(this.m.x, tx, 0.16); this.m.y = lerp(this.m.y, ty, 0.16); }
+
+    const c = this.cursorRef.current;
+    if (c && !this.touch) {
+      this.cur.x = lerp(this.cur.x, this.p.x, 0.25); this.cur.y = lerp(this.cur.y, this.p.y, 0.25);
+      this.cur.s = lerp(this.cur.s, this.cur.hot ? 56 : 10, 0.2);
+      const s = this.cur.s;
+      c.style.width = s + 'px'; c.style.height = s + 'px';
+      c.style.background = this.cur.hot ? 'transparent' : this.acc;
+      c.style.borderRadius = this.cur.hot ? '50%' : '0';
+      c.style.transform = 'translate3d(' + (this.cur.x - s / 2) + 'px,' + (this.cur.y - s / 2) + 'px,0)';
+    }
+    const pnl = this.previewRef.current;
+    if (pnl && this.pv.on) {
+      const gx = Math.min(this.p.x + 28, window.innerWidth - 340), gy = Math.min(this.p.y + 28, window.innerHeight - 260);
+      if (this.pv.snap) { this.pv.x = gx; this.pv.y = gy; this.pv.snap = false; }
+      const dx = gx - this.pv.x; this.pv.x = lerp(this.pv.x, gx, 0.14); this.pv.y = lerp(this.pv.y, gy, 0.14);
+      const rot = Math.max(-8, Math.min(8, dx * 0.04));
+      pnl.style.transform = 'translate3d(' + this.pv.x + 'px,' + this.pv.y + 'px,0) rotate(' + rot + 'deg)';
+    }
+    if (this.reduce) return;
+    if (this.track && this.vis.marq && this.mqHalf) {
+      const v = Math.min(80, Math.abs(this.vel));
+      this.mqx -= (1.1 + v * 0.28) * this.dir * dt;
+      if (this.mqx <= -this.mqHalf) this.mqx += this.mqHalf; if (this.mqx > 0) this.mqx -= this.mqHalf;
+      const sk = Math.max(-10, Math.min(10, -this.vel * 0.18));
+      this.track.style.transform = 'translate3d(' + this.mqx + 'px,0,0) skewX(' + sk + 'deg)';
+    }
+    if (this.vis.hero) this.drawHero(t, dt);
+    if (this.vis.foot) this.drawFoot(t);
+  }
+
+  push(b, ch, x, y) { b.push(ch, x, y); }
+
+  paint(S, colors) {
+    const { ctx, w, h, fs, b } = S;
+    ctx.clearRect(0, 0, w, h);
+    ctx.font = fs + 'px "Geist Mono", ui-monospace, monospace'; ctx.textBaseline = 'top';
+    for (let i = 0; i < b.length; i++) {
+      const a = b[i]; if (!a.length) continue; ctx.fillStyle = colors[i];
+      for (let j = 0; j < a.length; j += 3) ctx.fillText(a[j], a[j + 1], a[j + 2]);
+    }
+  }
+
+  drawHero(t, dt) {
+    const H = this.H; if (!H) return;
+    const { w, h, cw, ch, cols, rows, lum, zb, b } = H;
+    b.forEach(a => { a.length = 0; }); lum.fill(-9); zb.fill(0);
+    const sp = Math.max(0, Math.min(1, window.scrollY / h));
+    const r = H.c.getBoundingClientRect(), mx = this.m.x - r.left, my = this.m.y - r.top;
+    const mode = this.props.heroObject || 'portrait', Pm = mode === 'portrait' ? this.P : null;
+    if (mode === 'torus') {
+      const mob = w < 760;
+      const base = mob ? Math.min(w * 0.4, h * 0.24) : Math.min(w * 0.22, (h - 110) / 2 / 1.2);
+      const ext = base * 1.2;
+      const cx = mob ? w * 0.5 : w - ext - 32;
+      const cy = (mob ? Math.max(h * 0.3, 90 + ext) : Math.max(84 + ext, h * 0.42)) + sp * h * 0.22;
+      const size = base * (1 + sp * 0.3);
+      const K2 = 10, K1 = size * (K2 - 2) / 3;
+      const nx = this.p.x > -1e3 ? this.p.x / window.innerWidth - 0.5 : 0, ny = this.p.y > -1e3 ? this.p.y / window.innerHeight - 0.5 : 0;
+      this.tx += (nx - this.tx) * 0.04; this.ty += (ny - this.ty) * 0.04;
+      const spd = 1 + Math.min(6, Math.abs(this.vel) * 0.08);
+      this.rotA += 0.006 * spd * (dt || 1); this.rotB += 0.0035 * spd * (dt || 1);
+      const A = this.rotA + this.ty * 1.1, B = this.rotB + this.tx * 1.6;
+      const cA = Math.cos(A), sA = Math.sin(A), cB = Math.cos(B), sB = Math.sin(B);
+      for (let th = 0; th < 6.2832; th += 0.055) {
+        const ct = Math.cos(th), st = Math.sin(th), ox = 2 + ct, oy = st;
+        for (let ph = 0; ph < 6.2832; ph += 0.018) {
+          const cp = Math.cos(ph), sp2 = Math.sin(ph);
+          const x = ox * (cB * cp + sA * sB * sp2) - oy * cA * sB;
+          const y = ox * (sB * cp - sA * cB * sp2) + oy * cA * cB;
+          const ooz = 1 / (K2 + cA * ox * sp2 + oy * sA);
+          const col = ((cx + K1 * ooz * x) / cw) | 0, row = ((cy - K1 * ooz * y) / ch) | 0;
+          if (col < 0 || col >= cols || row < 0 || row >= rows) continue;
+          const i = row * cols + col;
+          if (ooz > zb[i]) { zb[i] = ooz; lum[i] = cp * ct * sB - cA * ct * sp2 - sA * st + cB * (cA * st - ct * sA * sp2); }
+        }
+      }
+    }
+    const hi = this.rootRef.current && this.rootRef.current.querySelector('[data-hi]');
+    const h1 = this.rootRef.current && this.rootRef.current.querySelector('h1');
+    H.zones = [];
+    if (this.rootRef.current) this.rootRef.current.querySelectorAll('[data-line]').forEach(el => { const rg = document.createRange(); rg.selectNodeContents(el); for (const z of rg.getClientRects()) H.zones.push([z.left - r.left - 12, z.top - r.top - 10, z.right - r.left + 12, z.bottom - r.top + 10]); });
+    const Z = H.zones, under = (x, y) => { for (let k = 0; k < Z.length; k++) { const q = Z[k]; if (x > q[0] && x < q[2] && y > q[1] && y < q[3]) return true; } return false; };
+    H.under = under;
+    if (hi) { const hb = hi.getBoundingClientRect(); H.tbx = hb.left - r.left + Math.min(hb.width, 420) + 40; H.tby = hb.top - r.top - 30; } else { H.tbx = -1; H.tby = 1e9; }
+    const T = '.,-~:;=!*#$@', R = '.:-=+*#%@';
+    for (let row = 0; row < rows; row++) {
+      const y = row * ch;
+      for (let col = 0; col < cols; col++) {
+        const i = row * cols + col, x = col * cw, L = lum[i];
+        if (L > -9) {
+          if (L > 0) { const k = Math.min(11, (L * 8) | 0); b[under(x, y) ? (k >= 6 ? 1 : 0) : (k >= 9 ? 4 : k >= 6 ? 3 : k >= 3 ? 2 : 1)].push(T[k], x, y); }
+          else b[0].push('.', x, y);
+          continue;
+        }
+        if (Pm && x >= Pm.x0 && x < Pm.x0 + Pm.pw && y >= Pm.y0 && y < Pm.y0 + Pm.ph && Pm.mask[(((y - Pm.y0) / Pm.ch) | 0) * Pm.cols + (((x - Pm.x0) / Pm.cw) | 0)]) continue;
+        const n = Math.sin(col * 0.09 + t * 0.35) * Math.cos(row * 0.16 - t * 0.25) + Math.sin((col - row) * 0.045 + t * 0.18);
+        if (n > 1.52) b[0].push(n > 1.78 ? '+' : '·', x, y);
+      }
+    }
+    this.paint(H, ['#3a3a35', '#62615b', '#9e9d97', '#ecebe6', this.acc]);
+    if (Pm) this.drawPortrait(t, sp, mx, my);
+  }
+
+  buildPortrait() {
+    const H = this.H, img = this.img; this.P = null;
+    if (!H || !img || !img.naturalWidth) return;
+    try {
+      const { w, h } = H, mob = w < 760;
+      const fs = mob ? 5.5 : (w < 1100 ? 6 : 7), cw = fs * 0.6, ch = fs * 1.2;
+      const sx0 = 120, sy0 = 60, sw = 1250, sh = 1880, asp = sw / sh;
+      const ph = mob ? Math.min(h * 0.6, w * 0.9 / asp) : Math.min(h - 120, w * 0.42 / asp), pw = ph * asp;
+      const x0 = mob ? (w - pw) / 2 : w - pw - Math.max(16, w * 0.04), y0 = mob ? 64 : h - ph - 48;
+      const cols = Math.floor(pw / cw), rows = Math.floor(ph / ch), S = 4;
+      if (cols < 4 || rows < 4) return;
+      const o = document.createElement('canvas'); o.width = cols * S; o.height = rows * S;
+      const oc = o.getContext('2d', { willReadFrequently: true });
+      oc.drawImage(img, sx0, sy0, sw, sh, 0, 0, o.width, o.height);
+      oc.fillStyle = '#000'; oc.fillRect((1120 - sx0) / sw * o.width, 0, o.width, (120 - sy0) / sh * o.height);
+      oc.fillRect(0, (1935 - sy0) / sh * o.height, o.width, o.height);
+      const d = oc.getImageData(0, 0, o.width, o.height).data, N = cols * rows, lum = new Float32Array(N);
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        let s = 0;
+        for (let yy = 0; yy < S; yy++) for (let xx = 0; xx < S; xx++) { const k = ((r * S + yy) * o.width + c * S + xx) * 4; s += 0.299 * d[k] + 0.587 * d[k + 1] + 0.114 * d[k + 2]; }
+        lum[r * cols + c] = Math.max(0, s / (S * S * 255) - 0.05);
+      }
+      const sorted = Array.from(lum).filter(v => v > 0.004).sort((p, q) => p - q);
+      const hiL = sorted.length ? sorted[Math.floor(sorted.length * 0.96)] : 1;
+      const ramp = " .,:;^Il!i><~+_-?][}{1)(|/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$", RL = ramp.length - 1;
+      const cells = [], mask = new Uint8Array(N);
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const i = r * cols + c, v = Math.pow(Math.min(1, lum[i] / hiL), 0.7);
+        if (v < 0.07) continue; mask[i] = 1;
+        const chr = ramp[Math.max(1, Math.round(v * RL))], b = v > 0.72 ? 3 : v > 0.46 ? 2 : v > 0.24 ? 1 : 0;
+        cells.push({ c, r, chr, b, r1: Math.random(), r2: Math.random() });
+      }
+      this.P = { x0, y0, pw, ph, cols, rows, cw, ch, fs, cells, mask, R0: mob ? 60 : 110, b: [[], [], [], [], [], []] };
+    } catch (e) { this.P = null; }
+  }
+
+  drawPortrait(t, sp, mx, my) {
+    const P = this.P, H = this.H; if (!P || !H) return;
+    const age = this.reduce ? 99 : (this.bornAt ? (performance.now() - this.bornAt) / 1000 : -1);
+    if (age < 0) return;
+    const { ctx } = H, b = P.b, G = '<>/\\{}[]01#$%&*=+', under = H.under || (() => false), R0 = P.R0;
+    b.forEach(a => { a.length = 0; });
+    const scan = ((t * 0.09) % 1.4 - 0.2) * P.ph + P.y0;
+    const glitch = !this.reduce && Math.sin(t * 1.7) * Math.sin(t * 0.63) > 0.93;
+    const gRow = ((Math.sin(Math.floor(t * 6) * 91.7) * 0.5 + 0.5) * P.rows) | 0;
+    for (let n = 0; n < P.cells.length; n++) {
+      const c = P.cells[n], rev = (c.r / P.rows) * 1.1 + c.r1 * 0.6;
+      if (age < rev) continue;
+      let x = P.x0 + c.c * P.cw, y = P.y0 + c.r * P.ch, chr = c.chr, bk = c.b;
+      if (age < rev + 0.22) { chr = G[(Math.random() * G.length) | 0]; bk = 4; }
+      if (sp > 0) { if (c.r2 < sp * 1.3 - 0.15) continue; x += (c.r1 - 0.5) * sp * 220; y -= c.r2 * sp * 160; }
+      if (glitch && Math.abs(c.r - gRow) < 2) x += 3 * P.cw;
+      const dx = x - mx, dy = y - my, d2 = dx * dx + dy * dy;
+      if (!this.reduce && d2 < R0 * R0) {
+        const d = Math.sqrt(d2) || 1, f = 1 - d / R0;
+        x += dx / d * f * f * 26; y += dy / d * f * f * 26;
+        if (Math.random() < f * 0.9) { chr = G[(Math.random() * G.length) | 0]; bk = 4; }
+      } else if (!this.reduce && Math.abs(y - scan) < P.ch * 1.2 && bk < 3) bk++;
+      if (under(x, y)) bk = bk === 3 || bk === 4 ? 1 : 0;
+      b[bk].push(chr, x, y);
+    }
+    ctx.font = P.fs + 'px "Geist Mono", ui-monospace, monospace'; ctx.textBaseline = 'top';
+    const colors = ['#3a3a35', '#6b6a64', '#a3a29c', '#ecebe6', this.acc, this.acc + '99'];
+    for (let i = 0; i < b.length; i++) {
+      const a = b[i]; if (!a.length) continue; ctx.fillStyle = colors[i];
+      for (let j = 0; j < a.length; j += 3) ctx.fillText(a[j], a[j + 1], a[j + 2]);
+    }
+  }
+
+  drawFoot(t) {
+    const F = this.F; if (!F) return;
+    const { cw, ch, cells, b } = F; b.forEach(a => { a.length = 0; });
+    const r = F.c.getBoundingClientRect(), mx = this.p.x - r.left, my = this.p.y - r.top;
+    const R = ' .:-=+*#%@', G = '<>/\\{}[]01#$%&*';
+    for (let j = 0; j < cells.length; j += 2) {
+      const c = cells[j], rw = cells[j + 1], x = c * cw, y = rw * ch, dx = x - mx, dy = y - my;
+      if (dx * dx + dy * dy < 13000) { b[4].push(G[(Math.random() * G.length) | 0], x, y); continue; }
+      const n = (Math.sin(c * 0.16 + t * 0.9) + Math.cos(rw * 0.33 - t * 0.7) + Math.sin((c + rw) * 0.06 - t * 0.45)) / 3;
+      const k = 4 + Math.min(5, ((n + 1) / 2 * 6) | 0);
+      b[k > 7 ? 3 : k > 5 ? 2 : 1].push(R[k], x, y);
+    }
+    this.paint(F, ['#3a3a35', '#4a4a44', '#8f8e88', '#ecebe6', this.acc]);
+  }
+}
+</script>
+</body>
+</html>
