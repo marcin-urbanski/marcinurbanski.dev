@@ -109,5 +109,15 @@ Approved by Marcin on 2026-11-04 with these defaults.
    bookmark shows it again, and the site stays cookie-free. (Marcin, 2026-11-04.)
 6. The post's chart bars keep a white hover through one new token, `--ink-bright: #ffffff`, used only there.
    (Marcin, 2026-11-04.)
-7. The design's `footCanvasRef` code (an ASCII "URBANSKI" wordmark) has no canvas in the markup and no README
+7. Additions during the build, beyond the design: the loader also closes on any key (not modifier keys or
+   shortcuts), and scroll keys that close it do not scroll the page, because it is `aria-hidden` and keyboard
+   users cannot click it; the approach label `(01) — approach` is an `<h2>` styled as the label, like contact's,
+   so every section has a heading.
+8. When the loader runs, the one-shot effects (count-up, runs grid, scroll reveals) start only after it closes, so
+   a visitor arriving at `/#work` or `/#contact` sees them; the design starts them behind the loader.
+   (Marcin, 2026-11-04.)
+9. When the browser refuses clipboard access, the copy button's label briefly reads "press ⌘C to copy" ("press
+   Ctrl+C to copy" off macOS) while the hidden address is selected, then returns to "copy address".
+   (Marcin, 2026-11-04.)
+10. The design's `footCanvasRef` code (an ASCII "URBANSKI" wordmark) has no canvas in the markup and no README
    section: it is left out.
