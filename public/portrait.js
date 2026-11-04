@@ -26,7 +26,7 @@
 
   // 3D: the face turns a little towards the pointer (near points move more than far ones) and a soft light
   // follows it; after a few still seconds, and on touch screens, it sways slowly. Characters stay as above.
-  const { sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects } = window.Portrait3D;
+  const { sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects, fieldMask } = window.Portrait3D;
   const YAW = .17, PITCH = .1, RELIEF = .3, LIGHT = .55;   // max turn (rad), depth as share of face width, light strength
   const FRONT = [0, 0, 1];
   let S, OX, OY, PH, yaw = 0, pitch = 0, lx = 0, ly = 0, movedAt = -1e9, built = "";
@@ -109,11 +109,7 @@
     fctx.font = ffs + "px " + MONO;
     fcw = fctx.measureText("M").width; fch = ffs * 1.22;
     fcols = Math.ceil(FW / fcw); frows = Math.ceil(FH / fch);
-    fmask = new Uint8Array(fcols * frows); frow = new Array(fcols);
-    for (let r = 0; r < frows; r++) for (let c = 0; c < fcols; c++) {
-      const x = Math.floor(c * fcw / cw), y = Math.floor(r * fch / ch);
-      if (x < cols && y < rows && cover[y * cols + x]) fmask[r * fcols + c] = 1;
-    }
+    fmask = fieldMask(cover, cols, rows, cw, ch, fcw, fch, fcols, frows); frow = new Array(fcols);
     // A ghost of the face is there from the first frame; the bubbles bring the rest.
     for (const k of targets) if (still || Math.random() < .4) filled[k] = 1;
     spawnAll();

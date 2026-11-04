@@ -90,7 +90,19 @@
     return false;
   }
 
-  const api = { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects };
+  // The background field cells (fcols x frows, each fcw x fch px) to leave out: those whose top-left falls in a
+  // face cell (cols x rows, each cw x ch px) that `cover` marks, so the field never shows through the face.
+  // Cells map with Math.floor, as the design's `|0` (.dc.html:536).
+  function fieldMask(cover, cols, rows, cw, ch, fcw, fch, fcols, frows) {
+    const mask = new Uint8Array(fcols * frows);
+    for (let r = 0; r < frows; r++) for (let c = 0; c < fcols; c++) {
+      const x = Math.floor(c * fcw / cw), y = Math.floor(r * fch / ch);
+      if (x < cols && y < rows && cover[y * cols + x]) mask[r * fcols + c] = 1;
+    }
+    return mask;
+  }
+
+  const api = { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects, fieldMask };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Portrait3D = api;
 })(this);

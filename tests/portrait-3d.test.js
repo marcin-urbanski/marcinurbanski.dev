@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects } = require("../public/portrait-3d.js");
+const { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects, fieldMask } = require("../public/portrait-3d.js");
 
 // A 3 x 2 depth grid, one sample every 2 portrait grid points.
 const depth = { w: 3, h: 2, scale: 2, data: Uint8Array.from([0, 51, 255, 102, 153, 204]) };
@@ -173,4 +173,30 @@ test("inRects leaves a point outside every box outside", () => {
 
 test("inRects checks every box", () => {
   assert.equal(inRects(200, 130, [...lines, { left: 100, top: 120, right: 250, bottom: 160 }], 12, 10), true);
+});
+
+// Face cells 4 x 8px, 5 x 3 of them; field cells 6 x 10px, 5 x 4 of them, so the field runs past the face's right
+// and bottom edges. Face cell (1, 1) is covered, and so is (0, 3), one row past the face's bottom.
+const fcover = Uint8Array.from({ length: 5 * 4 }, (_, k) => k === 1 * 5 + 1 || k === 3 * 5 + 0 ? 1 : 0);
+const fmask = fieldMask(fcover, 5, 3, 4, 8, 6, 10, 5, 4);
+
+test("fieldMask leaves out a field cell whose top-left falls in a covered face cell", () => {
+  assert.equal(fmask.length, 5 * 4);
+  assert.equal(fmask[1 * 5 + 1], 1);              // top-left (6, 10) is in face cell (1, 1)
+});
+
+test("fieldMask keeps the neighbouring field cells", () => {
+  assert.equal(fmask[1 * 5 + 2], 0);              // (12, 10): face cell (3, 1)
+  assert.equal(fmask[2 * 5 + 1], 0);              // (6, 20): face cell (1, 2)
+  assert.equal(fmask[1 * 5 + 0], 0);              // (0, 10): face cell (0, 1)
+});
+
+test("fieldMask cuts off face indices past the right edge", () => {
+  // (24, 0) is face column 6 of 5: unchecked, its index 6 would wrap to the covered cell (1, 1)
+  assert.equal(fmask[0 * 5 + 4], 0);
+});
+
+test("fieldMask cuts off face indices past the bottom edge", () => {
+  // (0, 30) is face row 3 of 3: unchecked, its index 15 would read the covered cell past the bottom
+  assert.equal(fmask[3 * 5 + 0], 0);
 });
