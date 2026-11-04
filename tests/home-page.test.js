@@ -229,6 +229,18 @@ test("reveal on scroll waits until 12% of the element is in view, as playOnce do
   assert.match(reveal, /core\.inView\(e, \.12\)/);
 });
 
+// Spec decision 8: with the loader, a visitor arriving at /#work sees the count-up, the runs grids and the reveals.
+test("the one-shot effects start when the loader closes, or at setup without a loader", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/effects.js"), "utf8");
+  const oneShots = (js.match(/const oneShots = \(\) => \{([^}]*)\}/) || [])[1] || "";
+  for (const fn of ["setupReveal()", "setupCount()", "setupRuns()"]) assert.ok(oneShots.includes(fn), fn);
+  const close = (js.match(/const close = \(\) => \{([\s\S]*?)\n    \};/) || [])[1] || "";
+  assert.match(close, /onClose\(\)/);
+  const setup = js.slice(js.indexOf("if (motion()) {"), js.indexOf('root.dataset.fx = "on"')).replace(/const oneShots = .*\n/, "");
+  assert.doesNotMatch(setup, /setupReveal\(\)|setupCount\(\)|setupRuns\(\)/);
+  assert.match(setup, /setupLoader\(oneShots\); else \{ oneShots\(\); intro\(\); \}/);
+});
+
 test("the portrait reads its colour from --ink, so the --fg alias is gone", () => {
   assert.doesNotMatch(css, /--fg\b/);
 });

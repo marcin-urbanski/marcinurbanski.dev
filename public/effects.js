@@ -249,7 +249,8 @@
 
   // README section 0: 1.7s of counter, bar and log, a 220ms hold, then a 1s wipe up. A click or a key (not a
   // modifier or a shortcut) skips it and a 2.6s timer closes it if frames are throttled. Shown once per tab.
-  function setupLoader() {
+  // `onClose` runs as it starts to close.
+  function setupLoader(onClose) {
     try { sessionStorage.setItem(LOADER_KEY, "1"); } catch (e) {}
     const log = el("pre", "hp-loader-log"), bar = el("pre", "hp-loader-bar"), num = el("span", "hp-loader-num");
     const show = state => { num.textContent = state.count; bar.textContent = state.bar; log.textContent = state.lines.join("\n"); };
@@ -273,6 +274,7 @@
       document.removeEventListener("keydown", onKey);
       loader.classList.add("is-out");
       root.classList.remove("intro");
+      try { onClose(); } catch (e) { console.error(e); bail(); }
       setTimeout(intro, 250);
       setTimeout(() => loader.remove(), 1100);
     };
@@ -314,13 +316,13 @@
     setupCursor();
     setupPreview();
     if (motion()) {
-      setupReveal();
       setupScramble();
       setupLitText();
       setupStrip();
-      setupCount();
-      setupRuns();
-      if (root.classList.contains("intro")) setupLoader(); else intro();
+      // The reveals, count-up and runs grids play once, so with the loader they wait for it to close (spec
+      // decision 8): a visitor arriving at /#work sees them instead of finding them done behind the loader.
+      const oneShots = () => { setupReveal(); setupCount(); setupRuns(); };
+      if (root.classList.contains("intro")) setupLoader(oneShots); else { oneShots(); intro(); }
     }
     root.dataset.fx = "on";
   } catch (e) {
