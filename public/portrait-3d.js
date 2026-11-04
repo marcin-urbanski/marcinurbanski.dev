@@ -92,6 +92,11 @@
     return false;
   }
 
+  // Whether face cell (col, row), cw x ch px, lies under a headline line: its top-left is inside a padded box.
+  function cellInZones(col, row, cw, ch, zones, padX, padY) {
+    return inRects(col * cw, row * ch, zones, padX, padY);
+  }
+
   // The background field cells (fcols x frows, each fcw x fch px) to leave out: those whose top-left falls in a
   // face cell (cols x rows, each cw x ch px) that `cover` marks, so the field never shows through the face.
   // Cells map with Math.floor, as the design's `|0` (.dc.html:536).
@@ -104,7 +109,7 @@
     return mask;
   }
 
-  const api = { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects, fieldMask };
+  const api = { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects, cellInZones, fieldMask };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Portrait3D = api;
 })(this);

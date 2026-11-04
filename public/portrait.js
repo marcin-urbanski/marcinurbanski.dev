@@ -26,7 +26,7 @@
 
   // 3D: the face turns a little towards the pointer (near points move more than far ones) and a soft light
   // follows it; after a few still seconds, and on touch screens, it sways slowly. Characters stay as above.
-  const { sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects, fieldMask } = window.Portrait3D;
+  const { sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, cellInZones, fieldMask } = window.Portrait3D;
   const YAW = .17, PITCH = .1, RELIEF = .3, LIGHT = .55;   // max turn (rad), depth as share of face width, light strength
   const FRONT = [0, 0, 1];
   let S, OX, OY, PH, yaw = 0, pitch = 0, lx = 0, ly = 0, movedAt = -1e9, built = "";
@@ -189,7 +189,7 @@
           const d = Math.hypot((x + .5) * cw - pointer.x, top + (y + .5) * ch - pointer.y);
           if (d < 90) c = RAMP[Math.max(1, Math.min(RAMP.length - 1, RAMP.indexOf(c) + Math.round((Math.random() - .5) * 26 * (1 - d / 90))))];
         }
-        const want = inRects(x * cw, y * ch, zones, 12, 10) ? MID : INK;
+        const want = cellInZones(x, y, cw, ch, zones, 12, 10) ? MID : INK;
         if (want !== colour) {
           if (colour) { fctx.fillStyle = colour; fctx.fillText(run, runX * cw, y * ch); }
           run = ""; runX = x; colour = want;
@@ -240,7 +240,7 @@
       bctx.globalAlpha = .16 + .7 * near;
       if (near <= .8) { bctx.fillText(BUB[chr[i]], x, y); continue; }
       // Close in, it shows its cell's character, dimmed like the face under a headline line.
-      const under = inRects(tx, ty - heroTop, zones, 12, 10);
+      const under = cellInZones(k % cols, k / cols | 0, cw, ch, zones, 12, 10);
       if (under) bctx.fillStyle = MID;
       bctx.fillText(cellChar(k, t), x, y);
       if (under) bctx.fillStyle = INK;

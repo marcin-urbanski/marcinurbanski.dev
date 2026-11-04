@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects, fieldMask } = require("../public/portrait-3d.js");
+const { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects, cellInZones, fieldMask } = require("../public/portrait-3d.js");
 
 // A 3 x 2 depth grid, one sample every 2 portrait grid points.
 const depth = { w: 3, h: 2, scale: 2, data: Uint8Array.from([0, 51, 255, 102, 153, 204]) };
@@ -188,6 +188,15 @@ test("inRects leaves a point outside every box outside", () => {
 
 test("inRects checks every box", () => {
   assert.equal(inRects(200, 130, [...lines, { left: 100, top: 120, right: 250, bottom: 160 }], 12, 10), true);
+});
+
+// Cells 10 x 12px against the line box above (padded box: x 88 .. 312, y 40 .. 100).
+test("cellInZones counts a cell whose top-left is in the padded box, even with its centre outside", () => {
+  assert.equal(cellInZones(31, 5, 10, 12, lines, 12, 10), true);    // top-left (310, 60), centre (315, 66)
+});
+
+test("cellInZones leaves out a cell whose top-left is outside, even with its centre inside", () => {
+  assert.equal(cellInZones(20, 3, 10, 12, lines, 12, 10), false);   // top-left (200, 36), centre (205, 42)
 });
 
 // Face cells 4 x 8px, 5 x 3 of them; field cells 6 x 10px, 5 x 4 of them, so the field runs past the face's right
