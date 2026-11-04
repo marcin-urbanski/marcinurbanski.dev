@@ -45,10 +45,11 @@
   const COUNT_MS = 2400;
   const countFrame = (target, elapsedMs) => formatCount(target * easeOutQuart(clamp(elapsedMs / COUNT_MS, 0, 1)));
 
-  // One frame of a model's runs grid (.dc.html:309–323): 360 runs as 12 rows of 30 cells (4 setups x 3
-  // requests, a blank line between setups), later models a little behind. Returns the grid's lines, each a
-  // list of { state: "done" | "current" | "pending", text } segments for the DOM code to wrap and colour.
-  const RUN_ROWS = 12, RUN_COLS = 30;
+  // One frame of a model's runs grid (.dc.html:309–323) at progress = elapsed / RUNS_MS (the 3s fill): 360 runs
+  // as 12 rows of 30 cells (4 setups x 3 requests, a blank line between setups), later models a little behind.
+  // Returns the grid's lines, each a list of { state: "done" | "current" | "pending", text } segments for the DOM
+  // code to wrap and colour.
+  const RUNS_MS = 3000, RUN_ROWS = 12, RUN_COLS = 30;
   function runsFrame(progress, modelIndex) {
     const q = clamp(progress * 1.2 - modelIndex * .1, 0, 1), runs = Math.round(easeInOutQuad(q) * RUN_ROWS * RUN_COLS);
     const lines = [];
@@ -134,10 +135,14 @@
     return SCROLL_KEYS.includes(e.key) ? "close-no-scroll" : "close";
   }
 
+  // Whether an IntersectionObserver entry has `threshold` of its target on screen. Firefox may report
+  // isIntersecting below the threshold, so the ratio is checked too.
+  const inView = (entry, threshold) => entry.isIntersecting && entry.intersectionRatio >= threshold;
+
   const api = {
     scrambleText, easeOutCubic, easeOutQuart, easeInOutQuad, loaderState, formatCount, countFrame, runsFrame,
     litPercent, londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, decayVelocityMs, frameDt,
-    createLoop, loaderKey
+    createLoop, loaderKey, inView, COUNT_MS, RUNS_MS
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.EffectsCore = api;

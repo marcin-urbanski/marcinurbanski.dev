@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const {
   scrambleText, easeOutCubic, easeOutQuart, easeInOutQuad, loaderState, formatCount, countFrame, runsFrame,
   litPercent, londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, decayVelocityMs, frameDt,
-  createLoop, loaderKey
+  createLoop, loaderKey, inView, COUNT_MS, RUNS_MS
 } = require("../public/effects-core.js");
 
 const near = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
@@ -292,6 +292,26 @@ test("countFrame ends on the formatted target at 2.4s and after", () => {
 
 test("countFrame stays at 0 before it starts", () => {
   assert.equal(countFrame(1080, -100), "0");
+});
+
+test("COUNT_MS is the count-up's 2.4s run", () => {
+  assert.equal(COUNT_MS, 2400);
+});
+
+test("RUNS_MS is the design's 3s runs grid fill", () => {
+  assert.equal(RUNS_MS, 3000);
+});
+
+test("inView ignores an intersecting entry below the threshold", () => {
+  assert.equal(inView({ isIntersecting: true, intersectionRatio: .2 }, .4), false);
+});
+
+test("inView starts an intersecting entry at the threshold", () => {
+  assert.equal(inView({ isIntersecting: true, intersectionRatio: .4 }, .4), true);
+});
+
+test("inView ignores an entry that is not intersecting", () => {
+  assert.equal(inView({ isIntersecting: false, intersectionRatio: 1 }, .4), false);
 });
 
 test("decayVelocity loses 10% per frame", () => {

@@ -254,5 +254,5 @@ html.motion .home-page .hp-row[data-io].is-in { transition: opacity 1.1s var(--e
 
 @media (prefers-reduced-motion: reduce) {
   html:has(> body.home-page) { scroll-behavior: auto; }
-  .home-page .hp-btn, .home-page .hp-row, .home-page .hp-copy, .home-page .hp-cursor { transition: none; }
+  .home-page .hp-btn, .home-page .hp-row, .home-page .hp-copy, .home-page .hp-cursor, .home-page .hp-pv { transition: none; }
 }

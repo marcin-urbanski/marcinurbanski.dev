@@ -170,7 +170,7 @@
   // until `render` returns true (finished).
   function playOnce(node, threshold, render) {
     const io = new IntersectionObserver(entries => {
-      if (!entries.some(e => e.isIntersecting)) return;
+      if (!entries.some(e => core.inView(e, threshold))) return;
       io.disconnect();
       const start = performance.now();
       const stop = window.SiteLoop.whileVisible(node, (dt, now) => { if (render(now - start)) stop(); });
@@ -186,7 +186,7 @@
       node.textContent = core.countFrame(target, 0);
       playOnce(node, .4, ms => {
         node.textContent = core.countFrame(target, ms);
-        return ms >= 2400;
+        return ms >= core.COUNT_MS;
       });
     });
   }
@@ -207,8 +207,8 @@
     });
     render(0);
     playOnce(host, .35, ms => {
-      render(ms / 3000);
-      return ms >= 3000;
+      render(ms / core.RUNS_MS);
+      return ms >= core.RUNS_MS;
     });
   }
 
@@ -235,6 +235,7 @@
       row.addEventListener("mouseenter", e => {
         track(e);
         cur = null;
+        step(1);
         panel.style.opacity = "1";
         loop.add(step);
       });
