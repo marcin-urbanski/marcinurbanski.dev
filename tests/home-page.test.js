@@ -177,9 +177,11 @@ test("the head script's failsafe leaves the classes once effects.js has taken ov
   assert.deepEqual([...classes].sort(), ["intro", "motion"]);
 });
 
-test("effects.js reads and writes the same loader flag as the head script", () => {
+test("effects.js writes the same loader flag the head script reads", () => {
   const js = fs.readFileSync(path.join(__dirname, "../public/effects.js"), "utf8");
-  assert.ok(js.includes(`"${LOADER_KEY}"`));
+  assert.match(headScript, new RegExp(`sessionStorage\\.getItem\\("${LOADER_KEY}"\\)`));
+  assert.match(js, new RegExp(`LOADER_KEY = "${LOADER_KEY}"`));
+  assert.match(js, /sessionStorage\.setItem\(LOADER_KEY, /);
 });
 
 test("the old home-only rules are gone from the stylesheet", () => {
