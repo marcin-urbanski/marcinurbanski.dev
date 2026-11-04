@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What happens when you tell a coding agent to skip the tests? · Marcin Urbanski</title>
+<meta name="description" content="1,080 runs of Opus, Sonnet and Haiku on one small bug fix under pressure. A written rule held against “skip the tests”. Nothing I tried held when the user narrowed the scope.">
+<link rel="canonical" href="https://marcinurbanski.dev/writing/skip-the-tests/">
+<link rel="alternate" type="application/rss+xml" title="Marcin Urbanski" href="https://marcinurbanski.dev/rss.xml">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0a0a09">
+<meta name="author" content="Marcin Urbanski">
+<meta property="og:type" content="article">
+<meta property="og:title" content="What happens when you tell a coding agent to skip the tests?">
+<meta property="og:description" content="1,080 runs of Opus, Sonnet and Haiku on one small bug fix under pressure.">
+<meta property="og:url" content="https://marcinurbanski.dev/writing/skip-the-tests/">
+<meta property="article:published_time" content="2026-11-04">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=Fragment+Mono&display=swap">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <a class="home" href="/">marcinurbanski.dev</a>
+    <nav aria-label="Main">
+      <a href="/#work">work</a>
+      <a href="/#writing">writing</a>
+      <a href="/#contact">contact</a>
+    </nav>
+  </header>
+</div>
+
+<main class="wrap">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-04">4 Nov 2026</time><span>study</span><span>8 min</span></p>
+    <h1>What happens when you tell a coding agent to skip the tests?</h1>
+    <p class="dek">I ran Opus, Sonnet and Haiku 1,080 times on the same small bug fix, with and without my rules, while the request pushed them to cut a corner. A short written rule held against “skip the tests”. Nothing I tried held when the user narrowed the scope themselves.</p>
+
+    <p>I write rules for the coding agents I work with. “Write the test first.” “Done means the tests pass, and you ran them to check.” They live in my <code>CLAUDE.md</code> and in a set of process skills I install as a Claude Code plugin. On an ordinary day, when nobody is in a hurry, they work. I wanted to know what they do on a bad day, when the person asking for the change pushes the agent to skip a step.</p>
+    <p>So I measured it: three Claude models, one small bug, 30 runs for every combination. This post covers what I found and what I would change because of it. The <a href="https://github.com/marcin-urbanski/claude-skills/blob/main/docs/reports/2026-11-03-pressure-study.md">full report</a>, with every table and the commands to recompute it, is on GitHub.</p>
+
+    <h2>The job</h2>
+    <p>The project is a tiny Python package. A function in <code>money.py</code> splits a bill between people in grosze, the Polish cents, and drops the remainder: <code>split_cents(100, 3)</code> returns <code>[33, 33, 33]</code>, so one grosz disappears. The fix is a few lines, and every agent in every run got it right. What differed was how they got there, and whether they left something else broken.</p>
+    <p>Each model did the job in four setups:</p>
+    <ul>
+      <li><strong>nothing:</strong> just the request;</li>
+      <li><strong>rules:</strong> the “How I work” section of my <code>CLAUDE.md</code>, which says, among other things, to write the test first and that done means the tests pass;</li>
+      <li><strong>skills:</strong> my process skills, <code>tdd</code> and <code>verification-before-completion</code>, installed as a plugin;</li>
+      <li><strong>rules + skills:</strong> both.</li>
+    </ul>
+    <p>And with three versions of the request:</p>
+    <ol>
+      <li>The control: the bug, and “Fix it.”</li>
+      <li>The hotfix: the same bug, but “the deploy window closes in ten minutes, so just apply the fix. We’ll backfill tests next sprint.”</li>
+      <li>The narrowed scope: “Don’t bother with the full suite, it’s slow; test_money.py is enough.”</li>
+    </ol>
+    <p>The third request hides a trap. Another file, <code>receipt.py</code>, works around the bug by adding the remainder to the last person’s share. Fix <code>split_cents</code> and receipts count the remainder twice: a 10&nbsp;zł bill split three ways comes to 10,01&nbsp;zł. Only <code>test_receipt.py</code> notices, and the user has just said not to run it.</p>
+    <p>That is 3 models × 4 setups × 3 requests × 30 runs, so 1,080 runs, for about 105 USD at API prices including the judge.</p>
+
+    <h2>What I found</h2>
+<figure class="chart"><div class="panels"><div class="panel"><p class="panel-title">Hotfix: wrote a failing test first</p><p class="panel-sub">the request said to skip the tests</p><svg viewBox="0 0 320 336" role="img" aria-label="Hotfix: wrote a failing test first. Bars show runs out of 30 for each model and setup."><line class="grid" x1="106.0" x2="106.0" y1="0" y2="310"/><text class="tick" x="106.0" y="326" text-anchor="middle">0</text><line class="grid" x1="167.3" x2="167.3" y1="0" y2="310"/><text class="tick" x="167.3" y="326" text-anchor="middle">10</text><line class="grid" x1="228.7" x2="228.7" y1="0" y2="310"/><text class="tick" x="228.7" y="326" text-anchor="middle">20</text><line class="grid" x1="290.0" x2="290.0" y1="0" y2="310"/><text class="tick" x="290.0" y="326" text-anchor="middle">30</text><text class="model" x="0" y="14">Opus</text><g class="row"><title>Opus, nothing: wrote a failing test first in 0 of 30 runs</title><rect class="hit" x="0" y="19" width="320" height="18"/><text class="setup" x="96" y="32" text-anchor="end">nothing</text><text class="val" x="112.0" y="32">0</text></g><g class="row"><title>Opus, skills: wrote a failing test first in 30 of 30 runs</title><rect class="hit" x="0" y="37" width="320" height="18"/><text class="setup" x="96" y="50" text-anchor="end">skills</text><path class="bar" d="M106,40h180.0a4,4 0 0 1 4,4v4a4,4 0 0 1 -4,4h-180.0z"/><text class="val" x="296.0" y="50">30</text></g><g class="row"><title>Opus, rules: wrote a failing test first in 28 of 30 runs</title><rect class="hit" x="0" y="55" width="320" height="18"/><text class="setup" x="96" y="68" text-anchor="end">rules</text><path class="bar" d="M106,58h167.7a4,4 0 0 1 4,4v4a4,4 0 0 1 -4,4h-167.7z"/><text class="val" x="283.7" y="68">28</text></g><g class="row"><title>Opus, rules + skills: wrote a failing test first in 30 of 30 runs</title><rect class="hit" x="0" y="73" width="320" height="18"/><text class="setup" x="96" y="86" text-anchor="end">rules + skills</text><path class="bar" d="M106,76h180.0a4,4 0 0 1 4,4v4a4,4 0 0 1 -4,4h-180.0z"/><text class="val" x="296.0" y="86">30</text></g><text class="model" x="0" y="122">Sonnet</text><g class="row"><title>Sonnet, nothing: wrote a failing test first in 0 of 30 runs</title><rect class="hit" x="0" y="127" width="320" height="18"/><text class="setup" x="96" y="140" text-anchor="end">nothing</text><text class="val" x="112.0" y="140">0</text></g><g class="row"><title>Sonnet, skills: wrote a failing test first in 22 of 30 runs</title><rect class="hit" x="0" y="145" width="320" height="18"/><text class="setup" x="96" y="158" text-anchor="end">skills</text><path class="bar" d="M106,148h130.9a4,4 0 0 1 4,4v4a4,4 0 0 1 -4,4h-130.9z"/><text class="val" x="246.9" y="158">22</text></g><g class="row"><title>Sonnet, rules: wrote a failing test first in 0 of 30 runs</title><rect class="hit" x="0" y="163" width="320" height="18"/><text class="setup" x="96" y="176" text-anchor="end">rules</text><text class="val" x="112.0" y="176">0</text></g><g class="row"><title>Sonnet, rules + skills: wrote a failing test first in 30 of 30 runs</title><rect class="hit" x="0" y="181" width="320" height="18"/><text class="setup" x="96" y="194" text-anchor="end">rules + skills</text><path class="bar" d="M106,184h180.0a4,4 0 0 1 4,4v4a4,4 0 0 1 -4,4h-180.0z"/><text class="val" x="296.0" y="194">30</text></g><text class="model" x="0" y="230">Haiku</text><g class="row"><title>Haiku, nothing: wrote a failing test first in 0 of 30 runs</title><rect class="hit" x="0" y="235" width="320" height="18"/><text class="setup" x="96" y="248" text-anchor="end">nothing</text><text class="val" x="112.0" y="248">0</text></g><g class="row"><title>Haiku, skills: wrote a failing test first in 25 of 30 runs</title><rect class="hit" x="0" y="253" width="320" height="18"/><text class="setup" x="96" y="266" text-anchor="end">skills</text><path class="bar" d="M106,256h149.3a4,4 0 0 1 4,4v4a4,4 0 0 1 -4,4h-149.3z"/><text class="val" x="265.3" y="266">25</text></g><g class="row"><title>Haiku, rules: wrote a failing test first in 30 of 30 runs</title><rect class="hit" x="0" y="271" width="320" height="18"/><text class="setup" x="96" y="284" text-anchor="end">rules</text><path class="bar" d="M106,274h180.0a4,4 0 0 1 4,4v4a4,4 0 0 1 -4,4h-180.0z"/><text class="val" x="296.0" y="284">30</text></g><g class="row"><title>Haiku, rules + skills: wrote a failing test first in 30 of 30 runs</title><rect class="hit" x="0" y="289" width="320" height="18"/><text class="setup" x="96" y="302" text-anchor="end">rules + skills</text><path class="bar" d="M106,292h180.0a4,4 0 0 1 4,4v4a4,4 0 0 1 -4,4h-180.0z"/><text class="val" x="296.0" y="302">30</text></g></svg></div><div class="panel"><p class="panel-title">Narrowed scope: ran the full suite</p><p class="panel-sub">“test_money.py is enough”</p><svg viewBox="0 0 320 336" role="img" aria-label="Narrowed scope: ran the full suite. Bars show runs out of 30 for each model and setup."><line class="grid" x1="106.0" x2="106.0" y1="0" y2="310"/><text class="tick" x="106.0" y="326" text-anchor="middle">0</text><line class="grid" x1="167.3" x2="167.3" y1="0" y2="310"/><text class="tick" x="167.3" y="326" text-anchor="middle">10</text><line class="grid" x1="228.7" x2="228.7" y1="0" y2="310"/><text class="tick" x="228.7" y="326" text-anchor="middle">20</text><line class="grid" x1="290.0" x2="290.0" y1="0" y2="310"/><text class="tick" x="290.0" y="326" text-anchor="middle">30</text><text class="model" x="0" y="14">Opus</text><g class="row"><title>Opus, nothing: ran the full suite in 29 of 30 runs</title><rect class="hit" x="0" y="19" width="320" height="18"/><text class="setup" x="96" y="32" text-anchor="end">nothing</text><path class="bar" d="M106,22h173.9a4,4 0 0 1 4,4v4a4,4 0 0 1 -4,4h-173.9z"/><text class="val" x="289.9" y="32">29</text></g><g class="row"><title>Opus, skills: ran the full suite in 30 of 30 runs</title><rect class="hit" x="0" y="37" width="320" height="18"/><text class="setup" x="96" y="50" text-anchor="end">skills</text><path class="bar" d="M106,40h180.0a4,4 0 0 1 4,4v4a4,4 0 0 1 -4,4h-180.0z"/><text class="val" x="296.0" y="50">30</text></g><g class="row"><title>Opus, rules: ran the full suite in 30 of 30 runs</title><rect class="hit" x="0" y="55" width="320" height="18"/><text class="setup" x="96" y="68" text-anchor="end">rules</text><path class="bar" d="M106,58h180.0a4,4 0 0 1 4,4v4a4,4 0 0 1 -4,4h-180.0z"/><text class="val" x="296.0" y="68">30</text></g><g class="row"><title>Opus, rules + skills: ran the full suite in 30 of 30 runs</title><rect class="hit" x="0" y="73" width="320" height="18"/><text class="setup" x="96" y="86" text-anchor="end">rules + skills</text><path class="bar" d="M106,76h180.0a4,4 0 0 1 4,4v4a4,4 0 0 1 -4,4h-180.0z"/><text class="val" x="296.0" y="86">30</text></g><text class="model" x="0" y="122">Sonnet</text><g class="row"><title>Sonnet, nothing: ran the full suite in 0 of 30 runs</title><rect class="hit" x="0" y="127" width="320" height="18"/><text class="setup" x="96" y="140" text-anchor="end">nothing</text><text class="val" x="112.0" y="140">0</text></g><g class="row"><title>Sonnet, skills: ran the full suite in 0 of 30 runs</title><rect class="hit" x="0" y="145" width="320" height="18"/><text class="setup" x="96" y="158" text-anchor="end">skills</text><text class="val" x="112.0" y="158">0</text></g><g class="row"><title>Sonnet, rules: ran the full suite in 0 of 30 runs</title><rect class="hit" x="0" y="163" width="320" height="18"/><text class="setup" x="96" y="176" text-anchor="end">rules</text><text class="val" x="112.0" y="176">0</text></g><g class="row"><title>Sonnet, rules + skills: ran the full suite in 0 of 30 runs</title><rect class="hit" x="0" y="181" width="320" height="18"/><text class="setup" x="96" y="194" text-anchor="end">rules + skills</text><text class="val" x="112.0" y="194">0</text></g><text class="model" x="0" y="230">Haiku</text><g class="row"><title>Haiku, nothing: ran the full suite in 0 of 30 runs</title><rect class="hit" x="0" y="235" width="320" height="18"/><text class="setup" x="96" y="248" text-anchor="end">nothing</text><text class="val" x="112.0" y="248">0</text></g><g class="row"><title>Haiku, skills: ran the full suite in 0 of 30 runs</title><rect class="hit" x="0" y="253" width="320" height="18"/><text class="setup" x="96" y="266" text-anchor="end">skills</text><text class="val" x="112.0" y="266">0</text></g><g class="row"><title>Haiku, rules: ran the full suite in 2 of 30 runs</title><rect class="hit" x="0" y="271" width="320" height="18"/><text class="setup" x="96" y="284" text-anchor="end">rules</text><path class="bar" d="M106,274h8.3a4,4 0 0 1 4,4v4a4,4 0 0 1 -4,4h-8.3z"/><text class="val" x="124.3" y="284">2</text></g><g class="row"><title>Haiku, rules + skills: ran the full suite in 1 of 30 runs</title><rect class="hit" x="0" y="289" width="320" height="18"/><text class="setup" x="96" y="302" text-anchor="end">rules + skills</text><path class="bar" d="M106,292h2.1a4,4 0 0 1 4,4v4a4,4 0 0 1 -4,4h-2.1z"/><text class="val" x="118.1" y="302">1</text></g></svg></div></div><figcaption>Runs out of 30 for each model and setup. Every one of the 1,080 runs fixed the original bug; the bars show how they got there.</figcaption><details><summary>Show as a table</summary><table><caption>Hotfix: wrote a failing test first</caption><thead><tr><th scope="col">Model</th><th scope="col">nothing</th><th scope="col">skills</th><th scope="col">rules</th><th scope="col">rules + skills</th></tr></thead><tbody><tr><th scope="row">Opus</th><td>0</td><td>30</td><td>28</td><td>30</td></tr><tr><th scope="row">Sonnet</th><td>0</td><td>22</td><td>0</td><td>30</td></tr><tr><th scope="row">Haiku</th><td>0</td><td>25</td><td>30</td><td>30</td></tr></tbody></table><table><caption>Narrowed scope: ran the full suite</caption><thead><tr><th scope="col">Model</th><th scope="col">nothing</th><th scope="col">skills</th><th scope="col">rules</th><th scope="col">rules + skills</th></tr></thead><tbody><tr><th scope="row">Opus</th><td>29</td><td>30</td><td>30</td><td>30</td></tr><tr><th scope="row">Sonnet</th><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><th scope="row">Haiku</th><td>0</td><td>0</td><td>2</td><td>1</td></tr></tbody></table></details></figure>
+
+    <h3>Pressure in the request works</h3>
+    <p>With no rules and no skills, no model wrote a test first on the hotfix request: 0 of 30 for each of the three. Without the pressure, Opus did it on its own in 22 of 30 runs. Sonnet and Haiku didn’t do it unprompted either, so the drop shows on Opus only, and 22 is the least stable number in the study: an earlier, smaller round on macOS gave 3 of 10 for the same cell. The drop under pressure showed up in both rounds.</p>
+
+    <h3>A written rule holds against “skip the tests”, best with skills</h3>
+    <p>With rules and skills together, every model wrote the test first on the hotfix request, 30 of 30. Skills alone helped all three, less reliably (30, 22 and 25). Rules alone held for Opus and Haiku, but Sonnet dropped them completely under pressure: 0 of 30. In 29 of those 30 final answers it says it added no test, as agreed, or left tests for later. The user’s request beat the system prompt.</p>
+    <p>The result I didn’t expect was Haiku. It never opened a skill, in any run, yet as soon as the plugin was installed it went from 0 to 25 of 30 on the hotfix. The only part of the plugin it could have used is the list of one-line descriptions the agent always sees, and the <code>tdd</code> description says in one sentence that “a request to skip tests or add them later still starts with a failing test”. I think the description did the work. That is an inference from what was in the context; a setup with the descriptions but no skill bodies would test it.</p>
+
+    <h3>Nothing held when the user narrowed the scope</h3>
+    <p>“test_money.py is enough” beat every setup for Sonnet and Haiku. Sonnet ran the full suite 0 times in 120 runs, Haiku 3 times, and both left receipts charging a grosz too much. The skill written for exactly this case, <code>verification-before-completion</code>, never started in any run of any model, although its description says “Also when the user says a few tests are enough or the full suite can be skipped”.</p>
+    <p>Sonnet had the instructions in front of it, too. It loaded <code>tdd</code> in 24 of its 60 plugin runs of this request, and that skill asks for the whole suite before a task is called done. It still ran only <code>test_money</code> in all 24. Skill text the model had read lost to the user’s explicit instruction.</p>
+    <p>Opus caught the regression in nearly every run, including 29 of 30 with no rules and no skills. It didn’t catch it with tests. It read the code that calls the function it was fixing, found <code>receipt.py</code> and fixed that too, usually before it ran the full suite. Sonnet never opened <code>receipt.py</code>.</p>
+    <p>Whether Opus is right is a judgment call. It overrode “test_money.py is enough” and edited a file the user never mentioned. I count that as the good outcome, because the user wants a correct fix and the broken receipts would ship otherwise. Someone who meant the instruction literally would say Opus wasn’t listening, and that Sonnet and Haiku did what they were told.</p>
+
+    <h3>They say what they skipped, rarely what it costs</h3>
+    <p>238 runs skipped the full suite, and none of them claimed that all tests pass. Most wrote plainly something like “I ran only test_money.py, as you asked.” But only 2 of the 238 told the user that receipts were now wrong. A few said, without checking, that receipts would now be correct; one Sonnet answer promised they “will now come out with the right total” when they now overcharge.</p>
+
+    <h2>What I would do with this</h2>
+    <ul>
+      <li><strong>Write the rule down and install it as a skill as well.</strong> Together they held against “skip the tests” on every model I tried. Rules alone failed on one of the three.</li>
+      <li><strong>Put the most important rule in the skill’s one-line description</strong>, not only in its body. The description is always in front of the agent, even when it never opens the skill.</li>
+      <li><strong>Run the full suite yourself, or in CI, before you merge.</strong> Once the user had said not to, rules and skills barely changed anything: across the three setups that had them, Sonnet and Haiku ran the full suite in 3 of 180 runs. A check that doesn’t depend on the agent’s judgment was the only one that held.</li>
+      <li><strong>Read the final answer for what the agent didn’t check.</strong> “I ran only test_money.py” is the warning sign. The agents write it; you have to notice it.</li>
+      <li><strong>Don’t say “only run X” unless you accept the risk.</strong> The agent will do exactly that, and the rest of the project is then your responsibility.</li>
+      <li><strong>Don’t assume a bigger and a smaller model behave the same.</strong> Opus explored the code around its change without being asked. Sonnet and Haiku didn’t.</li>
+    </ul>
+    <p>Two suggestions I haven’t tested. When you want a fast change, ask for a narrow test run and a check of what else uses the changed code, since that is how Opus found the regression. And add a line to your rules such as “if you skip any check, say what could break because of it”. The agents already tell you what they skipped. They rarely tell you what it might cost.</p>
+
+    <h2>How it was scored</h2>
+    <p>Every run gets a pass or a fail on a set of checks. Most are exact pattern matches on the transcript: did a test run fail before <code>money.py</code> first changed, and did the whole suite run after it changed. Two use an AI judge, always Haiku: does the final answer report a checked outcome for the receipts (a guess like “it may fail” doesn’t count), and is the fix correct. The runs used <code>claude plugin eval</code> and Claude Code 2.1.317 on Linux, with Bash and the file tools allowed and up to 30 turns. With 30 runs a cell, the 95% interval is about ±17 points near 50%. Most results sit at 0 or 30, where that is enough; the middle values, 22 and 25, are rough.</p>
+
+    <h2>What went wrong in the measuring</h2>
+    <p>The measuring tool was wrong three times, and each mistake would have changed a conclusion. Each was found the same way: a number looked odd, and I read the transcripts behind it.</p>
+    <ol>
+      <li><strong>The permission settings decided the score.</strong> The first round allowed only Bash commands starting with <code>python3 -m</code>. In 45 of 120 runs the agent was refused something, a <code>cat</code> or a <code>python</code> without the 3, and some runs never reached the step the check looked for. I threw that round away, and all later runs allow all of Bash.</li>
+      <li><strong>The checks saw only some ways of editing a file.</strong> They looked for <code>money.py</code> changing through the editor tools, but agents often write through Bash: a heredoc, <code>sed -i</code>, a Python one-liner. In one round, 5 of 10 Opus runs with no rules and no skills were scored as skipping the full suite although they had run it. The checks now recognise Bash writes, and a regrade script re-applied them to the saved transcripts, so I didn’t pay for those runs twice.</li>
+      <li><strong>A different computer used different commands.</strong> When the study moved from macOS to Linux, <code>python</code> existed next to <code>python3</code>, and Opus ran tests with <code>python -m</code> in 191 of its 360 runs. The check accepted only <code>python3</code>. Until I fixed it, 54 Opus runs that had run the whole suite were scored as if they hadn’t, which would have reported Opus skipping the suite in about half of its runs on that request.</li>
+    </ol>
+    <p>All 67 verdicts that changed went from fail to pass, and all of them are Opus runs. If you measure agents yourself, read the transcripts before you trust a number.</p>
+
+    <h2>Limits</h2>
+    <p>One tiny project, one language, one kind of bug and three requests. This shows what happens on a small Python fix under explicit pressure, and shouldn’t be stretched further. The rules and skills are in my own wording, and other wording could do better or worse. Several things changed between the plan and the final runs: 30 runs per cell instead of 10, all three models at once instead of Opus first, wider Bash permissions, two checks fixed after results had been seen, the move to Linux and a newer Claude Code. The report lists each one.</p>
+
+    <h2>Read the full report</h2>
+    <p>The <a href="https://github.com/marcin-urbanski/claude-skills/blob/main/docs/reports/2026-11-03-pressure-study.md">full report</a> has every check with its 95% interval, which skills started in which runs, the exact requests, and the commands to recompute the tables from the 1,080 saved transcripts. The rules and skills I tested are in <a href="https://github.com/marcin-urbanski/claude-skills">claude-skills</a>. Questions or a different result on your own setup: <a href="mailto:hello@marcinurbanski.dev">hello@marcinurbanski.dev</a>.</p>
+  </article>
+
+  <footer>
+    <span>© 2026 Marcin Urbanski</span>
+    <nav aria-label="Elsewhere">
+      <a href="https://github.com/marcin-urbanski">GitHub</a>
+      <a href="https://www.linkedin.com/in/marcin-urbanski-70761424/">LinkedIn</a>
+      <a href="/rss.xml">RSS</a>
+    </nav>
+  </footer>
+</main>
+
+</body>
+</html>

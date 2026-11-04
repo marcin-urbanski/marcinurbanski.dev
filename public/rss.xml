@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Marcin Urbanski</title>
+    <link>https://marcinurbanski.dev/</link>
+    <atom:link href="https://marcinurbanski.dev/rss.xml" rel="self" type="application/rss+xml"/>
+    <description>Writing on building apps with AI agents and testing what actually makes them reliable.</description>
+    <language>en</language>
+    <lastBuildDate>Wed, 04 Nov 2026 12:00:00 +0000</lastBuildDate>
+    <item>
+      <title>What happens when you tell a coding agent to skip the tests?</title>
+      <link>https://marcinurbanski.dev/writing/skip-the-tests/</link>
+      <guid isPermaLink="true">https://marcinurbanski.dev/writing/skip-the-tests/</guid>
+      <pubDate>Wed, 04 Nov 2026 12:00:00 +0000</pubDate>
+      <description>I ran Opus, Sonnet and Haiku 1,080 times on the same small bug fix, with and without my rules, while the request pushed them to cut a corner. A short written rule held against "skip the tests". Nothing I tried held when the user narrowed the scope themselves.</description>
+    </item>
+  </channel>
+</rss>

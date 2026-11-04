@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Marcin Urbanski</title>
+<meta name="description" content="Designer turned developer. I build my own apps with AI agents and test what actually makes them reliable.">
+<link rel="canonical" href="https://marcinurbanski.dev/">
+<link rel="alternate" type="application/rss+xml" title="Marcin Urbanski" href="https://marcinurbanski.dev/rss.xml">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0a0a09">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Marcin Urbanski">
+<meta property="og:description" content="Designer turned developer. I build my own apps with AI agents and test what actually makes them reliable.">
+<meta property="og:url" content="https://marcinurbanski.dev/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=Fragment+Mono&display=swap">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<canvas id="bubbles" aria-hidden="true"></canvas>
+
+<section class="hero">
+  <canvas id="face" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <header class="top">
+      <span>marcinurbanski.dev</span>
+      <nav aria-label="Main">
+        <a href="#work">work</a>
+        <a href="#writing">writing</a>
+        <a href="#contact">contact</a>
+      </nav>
+    </header>
+    <div class="col">
+      <p class="name">Hi, I'm Marcin Urbanski.</p>
+      <h1 class="statement">Designer turned developer. I build my own apps with AI agents and <em>test what actually makes them reliable.</em></h1>
+      <p class="bio">Ten years of graphic and web design, then development: WordPress, WooCommerce and Laravel for UK clients, checkout flows and performance work. Now I apply the same habit to agents. Reproduce, measure, fix the cause.</p>
+      <div class="facts"><span>web, since 2008</span><span>Southampton, UK</span></div>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+  <section class="sec" id="work">
+    <h2 class="sec-title"><span>selected work</span><span>3</span></h2>
+    <div class="work-grid">
+      <article class="item lead">
+        <div class="num">1,080<small>runs</small></div>
+        <h3><a href="/writing/skip-the-tests/">What happens when you tell a coding agent to skip the tests?</a></h3>
+        <p>Opus, Sonnet and Haiku, four setups, three requests, 30 runs each. A short written rule held against "skip the tests". Nothing I tried held when the user narrowed the scope themselves.</p>
+        <span class="meta">study · 2026-11-03</span>
+      </article>
+      <article class="item">
+        <span class="meta">open source</span>
+        <h3><a href="https://github.com/marcin-urbanski/claude-skills">claude-skills</a></h3>
+        <p>The process skills I run Claude Code with: test-first, verification, specs and independent review, each change checked with evals.</p>
+      </article>
+      <article class="item">
+        <span class="meta">app · macOS</span>
+        <h3><a href="https://gettimerabbit.com">TimeRabbit</a></h3>
+        <p>A native macOS time tracker, written by agents under my rules, tests and review.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="sec" id="writing">
+    <h2 class="sec-title"><span>writing</span><a href="/rss.xml">rss</a></h2>
+    <ul class="writing">
+      <li>
+        <time datetime="2026-11-04">4 Nov 2026</time>
+        <a href="/writing/skip-the-tests/">What happens when you tell a coding agent to skip the tests?</a>
+        <span class="rt">8 min</span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="sec" id="contact">
+    <h2 class="sec-title"><span>contact</span></h2>
+    <p class="contact-lead">Questions about agents, evals or a project? Write to me.</p>
+    <div class="mail"><span id="mail">hello@marcinurbanski.dev</span><button type="button" id="copy">copy address</button></div>
+    <p class="contact-alt">or find me on <a href="https://www.linkedin.com/in/marcin-urbanski-70761424/">LinkedIn</a> and <a href="https://github.com/marcin-urbanski">GitHub</a></p>
+  </section>
+
+  <footer id="elsewhere">
+    <span>© 2026 Marcin Urbanski</span>
+    <nav aria-label="Elsewhere">
+      <a href="https://github.com/marcin-urbanski">GitHub</a>
+      <a href="https://www.linkedin.com/in/marcin-urbanski-70761424/">LinkedIn</a>
+      <a href="/rss.xml">RSS</a>
+    </nav>
+  </footer>
+</main>
+
+<script src="/site.js"></script>
+<script src="/portrait.js"></script>
+</body>
+</html>
