@@ -14,7 +14,9 @@
 
   // The portrait grid point drawn at (x, y) when the face is turned. Turning draws a point at depth d
   // (d - .5) * (shx, shy) grid points away from its flat place, so near points (the nose) move with the turn
-  // and far ones (the ears) against it; a few fixed-point steps find the point that lands on (x, y).
+  // and far ones (the ears) against it; a few fixed-point steps find the point that lands on (x, y). Where
+  // depth jumps (the edge of the face) the mapping folds over and the steps only get close, which reads as
+  // a slight softening of the outline.
   function sourcePoint(depth, x, y, shx, shy) {
     let sx = x, sy = y;
     for (let n = 0; n < 4; n++) {

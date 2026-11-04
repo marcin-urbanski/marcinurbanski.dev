@@ -45,12 +45,16 @@
     let ty, tp, tlx, tly;
     if (pointer && now - movedAt < 2.5) {
       const fx = OX + GW * S / 2, fy = heroTop - window.scrollY + OY + GH * S / 2;   // face centre on screen
-      const nx = Math.max(-1, Math.min(1, (pointer.x - fx) / (VW * .5))), ny = Math.max(-1, Math.min(1, (pointer.y - fy) / (VH * .5)));
+      // -1 .. 1 from the face centre to the viewport edge on that side, so the turn is the same both ways
+      const toEdge = (p, c, size) => Math.max(-1, Math.min(1, (p - c) / Math.max(1, p > c ? size - c : c)));
+      const nx = toEdge(pointer.x, fx, VW), ny = toEdge(pointer.y, fy, VH);
       ty = nx * YAW; tp = -ny * PITCH; tlx = nx * .9; tly = ny * .9;
     } else {                                              // a slow sway, lit from the upper left
       ty = Math.sin(now * .45) * YAW * .7; tp = Math.sin(now * .31 + 1) * PITCH * .5; tlx = -.35; tly = -.45;
     }
-    yaw += (ty - yaw) * .08; pitch += (tp - pitch) * .08; lx += (tlx - lx) * .08; ly += (tly - ly) * .08;
+    // ease, and land exactly on the target so a centred pointer gives exactly the flat portrait
+    const ease = (v, t) => Math.abs(t - v) < 1e-3 ? t : v + (t - v) * .08;
+    yaw = ease(yaw, ty); pitch = ease(pitch, tp); lx = ease(lx, tlx); ly = ease(ly, tly);
     const key = [yaw, pitch, lx, ly].map(v => v.toFixed(4)).join();
     if (key !== built) { built = key; computeBase(yaw, pitch, [lx, ly, 1]); }
   }
@@ -85,14 +89,15 @@
     targets = [];
     // Every cell the face can cover at its widest turn is a target, so turning never clips it.
     const reach = new Float32Array(cols * rows);
-    if (!reduce) for (const [yw, pt] of [[YAW, 0], [-YAW, 0], [0, PITCH], [0, -PITCH]]) {
+    if (!reduce) for (const [yw, pt] of [[YAW, 0], [-YAW, 0], [0, PITCH], [0, -PITCH], [YAW, PITCH], [YAW, -PITCH], [-YAW, PITCH], [-YAW, -PITCH]]) {
       computeBase(yw, pt, FRONT);
       for (let k = 0; k < base.length; k++) reach[k] = Math.max(reach[k], base[k]);
     }
     computeBase(0, 0, FRONT); built = "";
     for (let y = 0; y < rows; y++) for (let x = c0; x < cols; x++) {
       const fade = Math.min(1, (FH - (y + .5) * ch) / (FH * .22)), k = y * cols + x;
-      if (Math.max(base[k], reach[k]) > .03 && Math.random() < fade) targets.push(k);
+      // reach is measured without the light, which can brighten a cell by up to about 40%: a lower bar
+      if ((base[k] > .03 || reach[k] > .02) && Math.random() < fade) targets.push(k);
     }
     // A ghost of the face is there from the first frame; the bubbles bring the rest.
     for (const k of targets) if (reduce || Math.random() < .4) filled[k] = 1;
@@ -213,7 +218,7 @@
     drawFace(ms / 1000);
   }
 
-  window.addEventListener("pointermove", e => { pointer = { x: e.clientX, y: e.clientY }; movedAt = performance.now() / 1000; }, { passive: true });
+  window.addEventListener("pointermove", e => { pointer = { x: e.clientX, y: e.clientY }; if (e.pointerType !== "touch") movedAt = performance.now() / 1000; }, { passive: true });
   document.addEventListener("pointerleave", () => { pointer = null; });
   let rt;
   window.addEventListener("resize", () => {
