@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade } = require("../public/portrait-3d.js");
+const { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects } = require("../public/portrait-3d.js");
 
 // A 3 x 2 depth grid, one sample every 2 portrait grid points.
 const depth = { w: 3, h: 2, scale: 2, data: Uint8Array.from([0, 51, 255, 102, 153, 204]) };
@@ -128,4 +128,49 @@ test("faceFade is full above the bottom 22% of the face and 0 from its bottom do
   assert.ok(near(faceFade(545, 600, 500), .5));
   assert.equal(faceFade(600, 600, 500), 0);
   assert.equal(faceFade(640, 600, 500), 0);
+});
+
+// README "Background field": t in seconds.
+test("fieldChar draws + where the field is strongest", () => {
+  assert.equal(fieldChar(51, 17, 0), "+");     // n = 1.905
+});
+
+test("fieldChar draws a dot where the field is above 1.52 but not 1.78", () => {
+  assert.equal(fieldChar(17, 0, 0), "·");      // n = 1.692
+});
+
+test("fieldChar draws nothing where the field is weak", () => {
+  assert.equal(fieldChar(0, 0, 0), "");        // n = 0
+  assert.equal(fieldChar(51, 17, 2), "");      // n = 1.456
+});
+
+test("fieldChar moves with time", () => {
+  assert.equal(fieldChar(44, 20, 0), "·");     // n = 1.611
+  assert.equal(fieldChar(44, 20, 2), "+");     // n = 1.894
+});
+
+// One headline line box from x 100 to 300 and y 50 to 90, padded 12 x 10 as the README says.
+const lines = [{ left: 100, top: 50, right: 300, bottom: 90 }];
+
+test("inRects finds a point inside a line box", () => {
+  assert.equal(inRects(200, 70, lines, 12, 10), true);
+});
+
+test("inRects finds a point in the padding around a line box", () => {
+  assert.equal(inRects(90, 45, lines, 12, 10), true);
+  assert.equal(inRects(311, 99, lines, 12, 10), true);
+});
+
+test("inRects leaves a point on the padding edge outside", () => {
+  assert.equal(inRects(88, 70, lines, 12, 10), false);
+  assert.equal(inRects(200, 100, lines, 12, 10), false);
+});
+
+test("inRects leaves a point outside every box outside", () => {
+  assert.equal(inRects(400, 70, lines, 12, 10), false);
+  assert.equal(inRects(200, 70, [], 12, 10), false);
+});
+
+test("inRects checks every box", () => {
+  assert.equal(inRects(200, 130, [...lines, { left: 100, top: 120, right: 250, bottom: 160 }], 12, 10), true);
 });

@@ -73,7 +73,24 @@
     return Math.max(0, Math.min(1, (bottom - cy) / (ph * .22)));
   }
 
-  const api = { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade };
+  // README "Background field": the character at field cell (col, row) at t seconds: "+" where the wave sum
+  // is above 1.78, "·" above 1.52, otherwise "" (nothing drawn).
+  function fieldChar(col, row, t) {
+    const n = Math.sin(col * .09 + t * .35) * Math.cos(row * .16 - t * .25) + Math.sin((col - row) * .045 + t * .18);
+    return n > 1.78 ? "+" : n > 1.52 ? "·" : "";
+  }
+
+  // Whether (x, y) is strictly inside any of the boxes { left, top, right, bottom } grown by padX and padY on
+  // each side: the headline line boxes under which the portrait dims.
+  function inRects(x, y, rects, padX, padY) {
+    for (let i = 0; i < rects.length; i++) {
+      const r = rects[i];
+      if (x > r.left - padX && x < r.right + padX && y > r.top - padY && y < r.bottom + padY) return true;
+    }
+    return false;
+  }
+
+  const api = { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Portrait3D = api;
 })(this);

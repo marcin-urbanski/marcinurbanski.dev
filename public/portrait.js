@@ -11,16 +11,22 @@
   const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches || !window.SiteLoop;
   const rootStyle = getComputedStyle(document.documentElement);
   const INK = rootStyle.getPropertyValue("--ink").trim(), MONO = rootStyle.getPropertyValue("--mono").trim();
+  const MID = rootStyle.getPropertyValue("--ascii-mid").trim(), DIM = rootStyle.getPropertyValue("--ascii-dim").trim();
   const hero = document.querySelector(".hero");
   const face = document.getElementById("face"), fctx = face.getContext("2d");
+  // README "ASCII portrait", readability: face cells under a headline line, padded 12 x 10px, draw dimmer.
+  // A Range gives one box per rendered text line; the element's own box would be a full-width block.
+  const lineEls = document.querySelectorAll("[data-line]"), range = document.createRange(), zones = [];
   const bub = document.getElementById("bubbles"), bctx = bub.getContext("2d");
 
   let dpr, fs, cw, ch, FW, FH, cols, rows, c0, base, filled, glow, jitter, targets;
   let VW, VH, docH, heroTop, pointer = null;
+  // README "Background field": its font, cell, size, the cells the face covers (fmask) and one reused row.
+  let ffs, fcw, fch, fcols, frows, fmask, frow;
 
   // 3D: the face turns a little towards the pointer (near points move more than far ones) and a soft light
   // follows it; after a few still seconds, and on touch screens, it sways slowly. Characters stay as above.
-  const { sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade } = window.Portrait3D;
+  const { sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects } = window.Portrait3D;
   const YAW = .17, PITCH = .1, RELIEF = .3, LIGHT = .55;   // max turn (rad), depth as share of face width, light strength
   const FRONT = [0, 0, 1];
   let S, OX, OY, PH, yaw = 0, pitch = 0, lx = 0, ly = 0, movedAt = -1e9, built = "";
@@ -92,10 +98,21 @@
       for (let k = 0; k < base.length; k++) reach[k] = Math.max(reach[k], base[k]);
     }
     computeBase(0, 0, FRONT); built = "";
+    const cover = new Uint8Array(cols * rows);           // cells the face can light at any turn
     for (let y = 0; y < rows; y++) for (let x = c0; x < cols; x++) {
       const fade = faceFade((y + .5) * ch, OY + PH, PH), k = y * cols + x;
       // reach is measured without the light, which brightens a cell by less than 1 + LIGHT: a lower bar
-      if ((base[k] > .03 || reach[k] > .03 / (1 + LIGHT)) && Math.random() < fade) targets.push(k);
+      if (base[k] > .03 || reach[k] > .03 / (1 + LIGHT)) { cover[k] = 1; if (Math.random() < fade) targets.push(k); }
+    }
+    // The field leaves out every cell whose top-left falls in a face cell, so it never shows through the face.
+    ffs = FW < 700 ? 10 : 13;
+    fctx.font = ffs + "px " + MONO;
+    fcw = fctx.measureText("M").width; fch = ffs * 1.22;
+    fcols = Math.ceil(FW / fcw); frows = Math.ceil(FH / fch);
+    fmask = new Uint8Array(fcols * frows); frow = new Array(fcols);
+    for (let r = 0; r < frows; r++) for (let c = 0; c < fcols; c++) {
+      const x = Math.floor(c * fcw / cw), y = Math.floor(r * fch / ch);
+      if (x < cols && y < rows && cover[y * cols + x]) fmask[r * fcols + c] = 1;
     }
     // A ghost of the face is there from the first frame; the bubbles bring the rest.
     for (const k of targets) if (still || Math.random() < .4) filled[k] = 1;
@@ -147,22 +164,43 @@
     if (top + FH < 0) return;                              // hero scrolled out of view
     if (!still) update3d(t);
     fctx.clearRect(0, 0, FW, FH);
+    fctx.textBaseline = "top";
+
+    fctx.font = ffs + "px " + MONO; fctx.fillStyle = DIM;
+    for (let r = 0; r < frows; r++) {
+      if (top + (r + 1) * fch < 0 || top + r * fch > VH) continue;
+      for (let c = 0, k = r * fcols; c < fcols; c++, k++) frow[c] = fmask[k] ? " " : fieldChar(c, r, t) || " ";
+      fctx.fillText(frow.join(""), 0, r * fch);
+    }
+
+    const box = face.getBoundingClientRect();
+    zones.length = 0;
+    for (const el of lineEls) {
+      range.selectNodeContents(el);
+      for (const z of range.getClientRects()) zones.push({ left: z.left - box.left, top: z.top - box.top, right: z.right - box.left, bottom: z.bottom - box.top });
+    }
+
+    // Each face row is drawn as runs of one colour, split where a cell moves in or out of a headline line.
     fctx.font = fs + "px " + MONO;
-    fctx.textBaseline = "top"; fctx.fillStyle = INK;
     for (let y = 0; y < rows; y++) {
       if (top + (y + 1) * ch < 0 || top + y * ch > VH) continue;
-      let line = "";
+      let run = "", runX = c0, colour = null;
       for (let x = c0; x < cols; x++) {
         const k = y * cols + x;
-        if (!filled[k] || base[k] < .03) { line += " "; continue; }
+        if (!filled[k] || base[k] < .03) { run += " "; continue; }
         let c = cellChar(k, t);
         if (pointer) {
           const d = Math.hypot((x + .5) * cw - pointer.x, top + (y + .5) * ch - pointer.y);
           if (d < 90) c = RAMP[Math.max(1, Math.min(RAMP.length - 1, RAMP.indexOf(c) + Math.round((Math.random() - .5) * 26 * (1 - d / 90))))];
         }
-        line += c;
+        const want = inRects(x * cw, y * ch, zones, 12, 10) ? MID : INK;
+        if (want !== colour) {
+          if (colour) { fctx.fillStyle = colour; fctx.fillText(run, runX * cw, y * ch); }
+          run = ""; runX = x; colour = want;
+        }
+        run += c;
       }
-      fctx.fillText(line, c0 * cw, y * ch);
+      if (colour) { fctx.fillStyle = colour; fctx.fillText(run, runX * cw, y * ch); }
     }
   }
 
