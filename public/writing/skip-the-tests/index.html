@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>What happens when you tell a coding agent to skip the tests? · Marcin Urbanski</title>
-<meta name="description" content="1,080 runs of Opus, Sonnet and Haiku on one small bug fix under pressure. A written rule held against “skip the tests”. Nothing I tried held when the user narrowed the scope.">
+<meta name="description" content="1,080 runs of Opus, Sonnet and Haiku on one small bug fix under pressure. A written rule, installed as a skill as well, held against “skip the tests”. Nothing I tried held when the user narrowed the scope.">
 <link rel="canonical" href="https://marcinurbanski.dev/writing/skip-the-tests/">
 <link rel="alternate" type="application/rss+xml" title="Marcin Urbanski" href="https://marcinurbanski.dev/rss.xml">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -37,7 +37,7 @@
   <article class="post">
     <p class="post-meta"><time datetime="2026-11-04">4 Nov 2026</time><span>study</span><span>8 min</span></p>
     <h1>What happens when you tell a coding agent to skip the tests?</h1>
-    <p class="dek">I ran Opus, Sonnet and Haiku 1,080 times on the same small bug fix, with and without my rules, while the request pushed them to cut a corner. A short written rule held against “skip the tests”. Nothing I tried held when the user narrowed the scope themselves.</p>
+    <p class="dek">I ran Opus, Sonnet and Haiku 1,080 times on the same small bug fix, with and without my rules, while the request pushed them to cut a corner. A written rule, installed as a skill as well, held against “skip the tests”. Nothing I tried held when the user narrowed the scope themselves.</p>
 
     <p>I write rules for the coding agents I work with. “Write the test first.” “Done means the tests pass, and you ran them to check.” They live in my <code>CLAUDE.md</code> and in a set of process skills I install as a Claude Code plugin. On an ordinary day, when nobody is in a hurry, they work. I wanted to know what they do on a bad day, when the person asking for the change pushes the agent to skip a step.</p>
     <p>So I measured it: three Claude models, one small bug, 30 runs for every combination. This post covers what I found and what I would change because of it. The <a href="https://github.com/marcin-urbanski/claude-skills/blob/main/docs/reports/2026-11-03-pressure-study.md">full report</a>, with every table and the commands to recompute it, is on GitHub.</p>
@@ -47,7 +47,7 @@
     <p>Each model did the job in four setups:</p>
     <ul>
       <li><strong>nothing:</strong> just the request;</li>
-      <li><strong>rules:</strong> the “How I work” section of my <code>CLAUDE.md</code>, which says, among other things, to write the test first and that done means the tests pass;</li>
+      <li><strong>rules:</strong> the “How I work” section of my <code>CLAUDE.md</code>, appended to the system prompt, which says, among other things, to write the test first and that done means the tests pass;</li>
       <li><strong>skills:</strong> my process skills, <code>tdd</code> and <code>verification-before-completion</code>, installed as a plugin;</li>
       <li><strong>rules + skills:</strong> both.</li>
     </ul>
@@ -67,8 +67,8 @@
     <p>With no rules and no skills, no model wrote a test first on the hotfix request: 0 of 30 for each of the three. Without the pressure, Opus did it on its own in 22 of 30 runs. Sonnet and Haiku didn’t do it unprompted either, so the drop shows on Opus only, and 22 is the least stable number in the study: an earlier, smaller round on macOS gave 3 of 10 for the same cell. The drop under pressure showed up in both rounds.</p>
 
     <h3>A written rule holds against “skip the tests”, best with skills</h3>
-    <p>With rules and skills together, every model wrote the test first on the hotfix request, 30 of 30. Skills alone helped all three, less reliably (30, 22 and 25). Rules alone held for Opus and Haiku, but Sonnet dropped them completely under pressure: 0 of 30. In 29 of those 30 final answers it says it added no test, as agreed, or left tests for later. The user’s request beat the system prompt.</p>
-    <p>The result I didn’t expect was Haiku. It never opened a skill, in any run, yet as soon as the plugin was installed it went from 0 to 25 of 30 on the hotfix. The only part of the plugin it could have used is the list of one-line descriptions the agent always sees, and the <code>tdd</code> description says in one sentence that “a request to skip tests or add them later still starts with a failing test”. I think the description did the work. That is an inference from what was in the context; a setup with the descriptions but no skill bodies would test it.</p>
+    <p>With rules and skills together, every model wrote the test first on the hotfix request, 30 of 30. Skills alone matched that on Opus (30) and helped Sonnet and Haiku less reliably (22 and 25). Rules alone held for Opus and Haiku, but Sonnet dropped them completely under pressure: 0 of 30. In 29 of those 30 final answers it says it added no test, as agreed, or left tests for later. The user’s request beat the system prompt.</p>
+    <p>The result I didn’t expect was Haiku. It never opened a skill, in any run, yet as soon as the plugin was installed it went from 0 to 25 of 30 on the hotfix. The only part of the plugin it could have used is the list of one-line skill and agent descriptions the agent always sees. The <code>tdd</code> description says in one sentence that “a request to skip tests or add them later still starts with a failing test”, and the <code>implementer</code> agent’s says it works test-first. I think the description did the work. That is an inference from what was in the context; a setup with the descriptions but no skill bodies would test it.</p>
 
     <h3>Nothing held when the user narrowed the scope</h3>
     <p>“test_money.py is enough” beat every setup for Sonnet and Haiku. Sonnet ran the full suite 0 times in 120 runs, Haiku 3 times, and both left receipts charging a grosz too much. The skill written for exactly this case, <code>verification-before-completion</code>, never started in any run of any model, although its description says “Also when the user says a few tests are enough or the full suite can be skipped”.</p>
@@ -86,6 +86,7 @@
       <li><strong>Run the full suite yourself, or in CI, before you merge.</strong> Once the user had said not to, rules and skills barely changed anything: across the three setups that had them, Sonnet and Haiku ran the full suite in 3 of 180 runs. A check that doesn’t depend on the agent’s judgment was the only one that held.</li>
       <li><strong>Read the final answer for what the agent didn’t check.</strong> “I ran only test_money.py” is the warning sign. The agents write it; you have to notice it.</li>
       <li><strong>Don’t say “only run X” unless you accept the risk.</strong> The agent will do exactly that, and the rest of the project is then your responsibility.</li>
+      <li><strong>Don’t count on a skill to start by itself when your request contradicts it.</strong> The verification skill never started, although its description covers exactly this request.</li>
       <li><strong>Don’t assume a bigger and a smaller model behave the same.</strong> Opus explored the code around its change without being asked. Sonnet and Haiku didn’t.</li>
     </ul>
     <p>Two suggestions I haven’t tested. When you want a fast change, ask for a narrow test run and a check of what else uses the changed code, since that is how Opus found the regression. And add a line to your rules such as “if you skip any check, say what could break because of it”. The agents already tell you what they skipped. They rarely tell you what it might cost.</p>
@@ -100,10 +101,10 @@
       <li><strong>The checks saw only some ways of editing a file.</strong> They looked for <code>money.py</code> changing through the editor tools, but agents often write through Bash: a heredoc, <code>sed -i</code>, a Python one-liner. In one round, 5 of 10 Opus runs with no rules and no skills were scored as skipping the full suite although they had run it. The checks now recognise Bash writes, and a regrade script re-applied them to the saved transcripts, so I didn’t pay for those runs twice.</li>
       <li><strong>A different computer used different commands.</strong> When the study moved from macOS to Linux, <code>python</code> existed next to <code>python3</code>, and Opus ran tests with <code>python -m</code> in 191 of its 360 runs. The check accepted only <code>python3</code>. Until I fixed it, 54 Opus runs that had run the whole suite were scored as if they hadn’t, which would have reported Opus skipping the suite in about half of its runs on that request.</li>
     </ol>
-    <p>All 67 verdicts that changed went from fail to pass, and all of them are Opus runs. If you measure agents yourself, read the transcripts before you trust a number.</p>
+    <p>When I re-applied the fixed checks to the 1,080 saved transcripts, all 67 verdicts that changed went from fail to pass, and all of them are Opus runs. If you measure agents yourself, read the transcripts before you trust a number.</p>
 
     <h2>Limits</h2>
-    <p>One tiny project, one language, one kind of bug and three requests. This shows what happens on a small Python fix under explicit pressure, and shouldn’t be stretched further. The rules and skills are in my own wording, and other wording could do better or worse. Several things changed between the plan and the final runs: 30 runs per cell instead of 10, all three models at once instead of Opus first, wider Bash permissions, two checks fixed after results had been seen, the move to Linux and a newer Claude Code. The report lists each one.</p>
+    <p>One tiny project, one language, one kind of bug and three requests. This shows what happens on a small Python fix under explicit pressure, and shouldn’t be stretched further. The rules and skills are in my own wording, and other wording could do better or worse. A real <code>CLAUDE.md</code> reaches the model as user context, not through the system prompt; that difference wasn’t tested. Several things changed between the plan and the final runs: 30 runs per cell instead of 10, all three models at once instead of Opus first, wider Bash permissions, two checks fixed after results had been seen, the move to Linux and a newer Claude Code. The report lists each one.</p>
 
     <h2>Read the full report</h2>
     <p>The <a href="https://github.com/marcin-urbanski/claude-skills/blob/main/docs/reports/2026-11-03-pressure-study.md">full report</a> has every check with its 95% interval, which skills started in which runs, the exact requests, and the commands to recompute the tables from the 1,080 saved transcripts. The rules and skills I tested are in <a href="https://github.com/marcin-urbanski/claude-skills">claude-skills</a>. Questions or a different result on your own setup: <a href="mailto:hello@marcinurbanski.dev">hello@marcinurbanski.dev</a>.</p>

@@ -28,7 +28,7 @@ a:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; border-radi
 
 header.top { display: flex; justify-content: space-between; gap: 28px; align-items: baseline; flex-wrap: wrap; padding-block: 24px 0; font: 400 13px/1.2 var(--mono); }
 header.top nav { display: flex; gap: 22px; }
-header.top nav a { color: var(--muted); text-decoration: none; }
+header.top nav a { color: var(--muted); text-decoration: none; padding-block: 12px; }
 header.top nav a:hover { color: var(--fg); }
 
 /* The statement leads; the name is a small label above it that also captions the portrait. */
@@ -71,10 +71,11 @@ header.top nav a:hover { color: var(--fg); }
 
 footer { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 160px; padding-block: 20px 48px; border-top: 1px solid var(--line); font: 400 12px/1.6 var(--mono); color: var(--muted); }
 footer nav { display: flex; gap: 22px; flex-wrap: wrap; }
+footer nav a { padding-block: 12px; }
 
 @media (max-width: 860px) {
   .hero { min-height: 0; }
-  #face { height: 64svh; height: 64vh; inset: 0 0 auto 0; }
+  #face { height: 64vh; height: 64svh; inset: 0 0 auto 0; }
   .col { max-width: none; }
   header.top { background: var(--bg); margin-inline: calc(-1 * var(--gutter-l)) calc(-1 * var(--gutter-r)); padding-inline: var(--gutter-l) var(--gutter-r); padding-bottom: 14px; }
   .name { margin-top: calc(64svh - 1em); }
@@ -124,7 +125,10 @@ header.top .home { color: var(--fg); text-decoration: none; }
 .chart .row:hover .setup { fill: var(--fg); }
 .chart figcaption { margin-top: 20px; font: 400 13px/1.6 var(--mono); color: var(--muted); }
 .chart details { margin-top: 14px; font: 400 13px/1.6 var(--mono); color: var(--muted); }
-.chart summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--fg); }
+.chart summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 8px; color: var(--fg); }
+.chart summary::-webkit-details-marker { display: none; }
+.chart summary::before { content: "+"; width: 1ch; }
+.chart details[open] summary::before { content: "\2212"; }
 .chart summary:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
 .chart table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; font-variant-numeric: tabular-nums; }
 .chart caption { text-align: left; padding-bottom: 8px; color: var(--fg); }

@@ -22,6 +22,7 @@
 
 <canvas id="bubbles" aria-hidden="true"></canvas>
 
+<main>
 <section class="hero">
   <canvas id="face" aria-hidden="true"></canvas>
   <div class="wrap">
@@ -42,14 +43,14 @@
   </div>
 </section>
 
-<main class="wrap">
+<div class="wrap">
   <section class="sec" id="work">
     <h2 class="sec-title"><span>selected work</span><span>3</span></h2>
     <div class="work-grid">
       <article class="item lead">
         <div class="num">1,080<small>runs</small></div>
         <h3><a href="/writing/skip-the-tests/">What happens when you tell a coding agent to skip the tests?</a></h3>
-        <p>Opus, Sonnet and Haiku, four setups, three requests, 30 runs each. A short written rule held against "skip the tests". Nothing I tried held when the user narrowed the scope themselves.</p>
+        <p>Opus, Sonnet and Haiku, four setups, three requests, 30 runs each. A written rule, installed as a skill as well, held against "skip the tests". Nothing I tried held when the user narrowed the scope themselves.</p>
         <span class="meta">study · 2026-11-03</span>
       </article>
       <article class="item">
@@ -79,7 +80,7 @@
   <section class="sec" id="contact">
     <h2 class="sec-title"><span>contact</span></h2>
     <p class="contact-lead">Questions about agents, evals or a project? Write to me.</p>
-    <div class="mail"><span id="mail">hello@marcinurbanski.dev</span><button type="button" id="copy">copy address</button></div>
+    <div class="mail"><a id="mail" href="mailto:hello@marcinurbanski.dev">hello@marcinurbanski.dev</a><button type="button" id="copy" aria-live="polite">copy address</button></div>
     <p class="contact-alt">or find me on <a href="https://www.linkedin.com/in/marcin-urbanski-70761424/">LinkedIn</a> and <a href="https://github.com/marcin-urbanski">GitHub</a></p>
   </section>
 
@@ -91,6 +92,7 @@
       <a href="/rss.xml">RSS</a>
     </nav>
   </footer>
+</div>
 </main>
 
 <script src="/site.js"></script>

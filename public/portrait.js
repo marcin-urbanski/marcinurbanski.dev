@@ -174,7 +174,18 @@
   window.addEventListener("pointermove", e => { pointer = { x: e.clientX, y: e.clientY }; }, { passive: true });
   document.addEventListener("pointerleave", () => { pointer = null; });
   let rt;
-  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { measure(); drawFace(0); }, 150); });
+  window.addEventListener("resize", () => {
+    clearTimeout(rt);
+    rt = setTimeout(() => {
+      // A phone toolbar showing or hiding changes only the height: resize the bubble layer, keep the face as it is.
+      if (window.innerWidth === VW && face.clientHeight === FH) {
+        VH = window.innerHeight; docH = document.documentElement.scrollHeight;
+        bub.height = Math.round(VH * dpr); bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return;
+      }
+      measure(); drawFace(0);
+    }, 150);
+  });
   if (reduce) window.addEventListener("scroll", () => drawFace(0), { passive: true });
 
   measure(); drawFace(0);

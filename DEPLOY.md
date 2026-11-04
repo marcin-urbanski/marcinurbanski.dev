@@ -18,7 +18,7 @@ First deploy (2026-11-04): `wrangler pages project create marcinurbanski --produ
 below in the Cloudflare dashboard.
 
 1. Workers & Pages → marcinurbanski → Custom domains → add `marcinurbanski.dev`, then `www.marcinurbanski.dev`.
-2. Rules → Redirect rule: `www.marcinurbanski.dev/*` → `https://marcinurbanski.dev/${1}`, 301, keep the query string.
+2. Rules → Redirect rule (wildcard pattern): request URL `https://www.marcinurbanski.dev/*` → `https://marcinurbanski.dev/${1}`, 301, keep the query string.
 3. Same project → Metrics → Web Analytics → Enable (cookieless; Cloudflare adds the script itself).
 
 Mail: `hello@marcinurbanski.dev` is Cloudflare Email Routing to Marcin's inbox. Its MX and SPF records live in the same
