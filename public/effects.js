@@ -1,8 +1,8 @@
 // The home page runtime: the page's one frame loop (window.SiteLoop), the intro loader, the hero line reveal,
-// reveal on scroll, the header clock, the text scramble (window.SiteEffects.scramble) and the custom cursor. The
-// maths is in effects-core.js. The <head> script in index.html adds `motion` (and `intro` while this tab has not
-// seen the loader) to <html>; styles.css keeps start states under those classes only, and
-// the head script drops them after 4s unless this file has set data-fx="on".
+// reveal on scroll, the header clock, the text scramble (window.SiteEffects.scramble), the custom cursor, the
+// scroll-lit approach text and the strip. The maths is in effects-core.js. The <head> script in index.html adds
+// `motion` (and `intro` while this tab has not seen the loader) to <html>; styles.css keeps start states under
+// those classes only, and the head script drops them after 4s unless this file has set data-fx="on".
 (() => {
   const root = document.documentElement, core = window.EffectsCore, LOADER_KEY = "loader-seen";
   let loader = null;
@@ -124,8 +124,50 @@
     document.querySelectorAll("[data-io]").forEach(node => io.observe(node));
   }
 
-  // README section 0: 1.7s of counter, bar and log, a 220ms hold, then a 1s wipe up. A click or any key skips it
-  // and a 2.6s timer closes it if frames are throttled. Shown once per tab.
+  // README section 3: the approach text lights in reading order as it scrolls through the viewport. styles.css
+  // draws the gradient from --ink to --ascii-dim around --lit under .is-lit; this sets --lit while it is on screen.
+  function setupLitText() {
+    document.querySelectorAll("[data-words]").forEach(node => {
+      let last = null;
+      const step = () => {
+        const r = node.getBoundingClientRect(), pct = core.litPercent(r.top, r.height, window.innerHeight);
+        if (pct !== last) node.style.setProperty("--lit", (last = pct) + "%");
+      };
+      step();
+      node.classList.add("is-lit");
+      window.SiteLoop.whileVisible(node, step);
+    });
+  }
+
+  // README section 4: the strip drifts left (or right after scrolling up), faster and skewed while the page
+  // scrolls, and wraps at half its width. Scroll velocity loses 10% a frame; it is kept with the time it was
+  // last set, so it decays the same while the strip is off screen and its frame is not running.
+  function setupStrip() {
+    const track = document.querySelector("[data-track]");
+    if (!track) return;
+    let half = 0, x = 0, vel = 0, velAt = 0, dir = 1, lastY = window.scrollY;
+    const measure = () => { half = track.scrollWidth / 2; };
+    const velocity = now => core.decayVelocity(vel, Math.max(0, now - velAt) / (1000 / 60));
+    window.addEventListener("scroll", () => {
+      const y = window.scrollY, d = y - lastY, now = performance.now();
+      lastY = y;
+      vel = velocity(now) + d;
+      velAt = now;
+      if (d) dir = d > 0 ? 1 : -1;
+    }, { passive: true });
+    window.addEventListener("resize", measure);
+    if (document.fonts) document.fonts.ready.then(measure);
+    measure();
+    window.SiteLoop.whileVisible(track, (dt, now) => {
+      if (!(half > 0)) return;
+      const v = velocity(now);
+      x = core.stripStep(x, half, v, dir, dt);
+      track.style.transform = "translate3d(" + x + "px,0,0) skewX(" + core.stripSkew(v) + "deg)";
+    });
+  }
+
+  // README section 0: 1.7s of counter, bar and log, a 220ms hold, then a 1s wipe up. A click or a key (not a
+  // modifier or a shortcut) skips it and a 2.6s timer closes it if frames are throttled. Shown once per tab.
   function setupLoader() {
     try { sessionStorage.setItem(LOADER_KEY, "1"); } catch (e) {}
     const log = el("pre", "hp-loader-log"), bar = el("pre", "hp-loader-bar"), num = el("span", "hp-loader-num");
@@ -147,11 +189,18 @@
       if (closed) return;
       closed = true;
       loop.remove(step);
-      document.removeEventListener("keydown", close);
+      document.removeEventListener("keydown", onKey);
       loader.classList.add("is-out");
       root.classList.remove("intro");
       setTimeout(intro, 250);
       setTimeout(() => loader.remove(), 1100);
+    };
+    // A modifier or a shortcut leaves it; a scroll key closes it without also scrolling the page.
+    const onKey = e => {
+      const action = core.loaderKey(e);
+      if (action === "ignore") return;
+      if (action === "close-no-scroll") e.preventDefault();
+      close();
     };
     const step = (dt, now) => {
       const state = core.loaderState(now - start);
@@ -159,7 +208,7 @@
       if (state.done) { loop.remove(step); setTimeout(close, 220); }
     };
     loader.addEventListener("click", close, { once: true });
-    document.addEventListener("keydown", close, { once: true });
+    document.addEventListener("keydown", onKey);
     setTimeout(close, 2600);
     document.body.append(loader);
     loop.add(step);
@@ -183,6 +232,8 @@
     if (motion()) {
       setupReveal();
       setupScramble();
+      setupLitText();
+      setupStrip();
       if (root.classList.contains("intro")) setupLoader(); else intro();
     }
     root.dataset.fx = "on";

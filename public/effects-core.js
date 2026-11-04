@@ -71,7 +71,9 @@
 
   // One frame of the scrolling strip (.dc.html frame()): it drifts 1.1px a frame plus .28 per unit of scroll
   // velocity (|v| capped at 80) in the scroll direction (1 down, -1 up); the offset wraps into (-half, 0].
+  // Until the track's half width is known and positive the offset stays put (a NaN offset would stick).
   function stripStep(x, half, velocity, direction, dt) {
+    if (!(half > 0)) return x;
     const next = (x - (1.1 + Math.min(80, Math.abs(velocity)) * .28) * direction * dt) % half;
     return next > 0 ? next - half : next;
   }
@@ -117,9 +119,18 @@
     };
   }
 
+  // What a keydown does to the intro loader: "close", "close-no-scroll" for a scroll key (the caller also
+  // cancels the scroll), or "ignore" for a modifier on its own or a shortcut with Cmd, Ctrl or Alt held.
+  const MODIFIERS = ["Meta", "Control", "Alt", "Shift"];
+  const SCROLL_KEYS = [" ", "PageDown", "PageUp", "ArrowDown", "ArrowUp", "Home", "End"];
+  function loaderKey(e) {
+    if (MODIFIERS.includes(e.key) || e.metaKey || e.ctrlKey || e.altKey) return "ignore";
+    return SCROLL_KEYS.includes(e.key) ? "close-no-scroll" : "close";
+  }
+
   const api = {
     scrambleText, easeOutCubic, easeOutQuart, easeInOutQuad, loaderState, formatCount, runsFrame, litPercent,
-    londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, frameDt, createLoop
+    londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, frameDt, createLoop, loaderKey
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.EffectsCore = api;

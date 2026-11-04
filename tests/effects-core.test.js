@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
   scrambleText, easeOutCubic, easeOutQuart, easeInOutQuad, loaderState, formatCount, runsFrame, litPercent,
-  londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, frameDt, createLoop
+  londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, frameDt, createLoop, loaderKey
 } = require("../public/effects-core.js");
 
 const near = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
@@ -219,6 +219,12 @@ test("stripStep wraps past 0 back towards -half", () => {
   assert.ok(near(stripStep(-.5, 1000, 0, -1, 1), -999.4, 1e-6));
 });
 
+test("stripStep keeps the offset while the half width is unknown", () => {
+  assert.equal(stripStep(-100, 0, 0, 1, 1), -100);
+  assert.equal(stripStep(-100, -5, 0, 1, 1), -100);
+  assert.equal(stripStep(-100, NaN, 0, 1, 1), -100);
+});
+
 test("stripSkew leans against the scroll velocity", () => {
   assert.ok(near(stripSkew(10), -1.8));
   assert.ok(near(stripSkew(-10), 1.8));
@@ -378,4 +384,30 @@ test("createLoop ignores a callback added again after it threw", () => {
   frames.tick(16);
   assert.equal(calls, 1);
   assert.deepEqual(errors, ["boom"]);
+});
+
+test("loaderKey closes the loader on an ordinary key", () => {
+  assert.equal(loaderKey({ key: "Enter" }), "close");
+  assert.equal(loaderKey({ key: "a" }), "close");
+  assert.equal(loaderKey({ key: "Escape" }), "close");
+});
+
+test("loaderKey closes without scrolling on a scroll key", () => {
+  for (const key of [" ", "PageDown", "PageUp", "ArrowDown", "ArrowUp", "Home", "End"]) {
+    assert.equal(loaderKey({ key }), "close-no-scroll", key);
+  }
+});
+
+test("loaderKey ignores a modifier key on its own", () => {
+  for (const key of ["Meta", "Control", "Alt", "Shift"]) assert.equal(loaderKey({ key }), "ignore", key);
+});
+
+test("loaderKey ignores a shortcut with Cmd, Ctrl or Alt held", () => {
+  assert.equal(loaderKey({ key: "r", metaKey: true }), "ignore");
+  assert.equal(loaderKey({ key: "r", ctrlKey: true }), "ignore");
+  assert.equal(loaderKey({ key: "ArrowDown", altKey: true }), "ignore");
+});
+
+test("loaderKey still closes with only Shift held", () => {
+  assert.equal(loaderKey({ key: "A", shiftKey: true }), "close");
 });
