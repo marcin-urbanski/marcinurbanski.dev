@@ -220,3 +220,21 @@ test("no rule outside the motion start states hides content", () => {
       sel.trim());
   }
 });
+
+test("reveal on scroll waits until 12% of the element is in view, as playOnce does", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/effects.js"), "utf8");
+  const reveal = js.slice(js.indexOf("function setupReveal"), js.indexOf("function setupLitText"));
+  assert.match(reveal, /core\.inView\(e, \.12\)/);
+});
+
+test("the portrait reads its colour from --ink, so the --fg alias is gone", () => {
+  assert.doesNotMatch(css, /--fg\b/);
+});
+
+test("the portrait draws in the --mono font (Geist Mono) and runs in the page loop", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  assert.doesNotMatch(js, /Fragment Mono/);
+  assert.doesNotMatch(js, /requestAnimationFrame/);
+  assert.match(js, /getPropertyValue\("--mono"\)/);
+  assert.match(js, /SiteLoop\.whileVisible\(face,/);
+});

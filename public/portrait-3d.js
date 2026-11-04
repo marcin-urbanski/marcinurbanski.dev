@@ -54,7 +54,26 @@
     return (p - c) / Math.max(1, p > c ? size - c : c);
   }
 
-  const api = { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge };
+  // README "ASCII portrait": where the face sits in a w x h hero and its font size; asp = face width / height.
+  // Desktop: anchored right and bottom. Under 760px: centred near the top.
+  function portraitLayout(w, h, asp) {
+    const mobile = w < 760;
+    const ph = mobile ? Math.min(h * .6, w * .9 / asp) : Math.min(h - 120, w * .42 / asp), pw = ph * asp;
+    return {
+      x: mobile ? (w - pw) / 2 : w - pw - Math.max(16, w * .04),
+      y: mobile ? 64 : h - ph - 48,
+      pw, ph,
+      fontPx: mobile ? 5.5 : w < 1100 ? 6 : 7
+    };
+  }
+
+  // How much of a cell at height cy is kept as the face of height ph dissolves towards its bottom:
+  // 1 above the bottom 22%, falling to 0 at the bottom and below it.
+  function faceFade(cy, bottom, ph) {
+    return Math.max(0, Math.min(1, (bottom - cy) / (ph * .22)));
+  }
+
+  const api = { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Portrait3D = api;
 })(this);

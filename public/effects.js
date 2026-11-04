@@ -117,7 +117,7 @@
   // [data-io] elements rise in once, when 12% of them is on screen (README "Scroll reveal").
   function setupReveal() {
     const io = new IntersectionObserver(entries => entries.forEach(e => {
-      if (!e.isIntersecting) return;
+      if (!core.inView(e, .12)) return;
       io.unobserve(e.target);
       e.target.classList.add("is-in");
     }), { threshold: .12, rootMargin: "0px 0px -6% 0px" });

@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge } = require("../public/portrait-3d.js");
+const { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade } = require("../public/portrait-3d.js");
 
 // A 3 x 2 depth grid, one sample every 2 portrait grid points.
 const depth = { w: 3, h: 2, scale: 2, data: Uint8Array.from([0, 51, 255, 102, 153, 204]) };
@@ -87,4 +87,45 @@ test("toEdge spans -1 .. 1 from an off-centre point to each viewport edge", () =
 test("toEdge is 0, not NaN, with the centre on the viewport edge", () => {
   assert.equal(toEdge(0, 0, 800), 0);
   assert.equal(toEdge(800, 800, 800), 0);
+});
+
+// README "ASCII portrait": an aspect of .8 keeps the expected numbers exact.
+const layoutNear = (got, want) => {
+  for (const key of Object.keys(want)) assert.ok(near(got[key], want[key], 1e-9), `${key}: ${got[key]} != ${want[key]}`);
+};
+
+test("portraitLayout anchors the face right and bottom at 1280x800 in 7px", () => {
+  layoutNear(portraitLayout(1280, 800, .8), { x: 691.2, y: 80, pw: 537.6, ph: 672, fontPx: 7 });
+});
+
+test("portraitLayout keeps the face 120px shorter than a low hero", () => {
+  layoutNear(portraitLayout(1280, 600, .8), { x: 1280 - 384 - 51.2, y: 72, pw: 384, ph: 480, fontPx: 7 });
+});
+
+test("portraitLayout uses 7px at 1100px wide", () => {
+  layoutNear(portraitLayout(1100, 800, .8), { x: 594, y: 174.5, pw: 462, ph: 577.5, fontPx: 7 });
+});
+
+test("portraitLayout uses 6px under 1100px wide", () => {
+  layoutNear(portraitLayout(1099, 800, .8), { x: 1099 - 461.58 - 43.96, y: 800 - 576.975 - 48, pw: 461.58, ph: 576.975, fontPx: 6 });
+});
+
+test("portraitLayout still anchors right and bottom at 760px wide", () => {
+  layoutNear(portraitLayout(760, 800, .8), { x: 410.4, y: 353, pw: 319.2, ph: 399, fontPx: 6 });
+});
+
+test("portraitLayout centres the face at the top in 5.5px under 760px wide", () => {
+  layoutNear(portraitLayout(759, 800, .8), { x: 187.5, y: 64, pw: 384, ph: 480, fontPx: 5.5 });
+});
+
+test("portraitLayout fits a phone's width at 375x812", () => {
+  layoutNear(portraitLayout(375, 812, .8), { x: 18.75, y: 64, pw: 337.5, ph: 421.875, fontPx: 5.5 });
+});
+
+test("faceFade is full above the bottom 22% of the face and 0 from its bottom down", () => {
+  assert.equal(faceFade(100, 600, 500), 1);
+  assert.equal(faceFade(490, 600, 500), 1);
+  assert.ok(near(faceFade(545, 600, 500), .5));
+  assert.equal(faceFade(600, 600, 500), 0);
+  assert.equal(faceFade(640, 600, 500), 0);
 });

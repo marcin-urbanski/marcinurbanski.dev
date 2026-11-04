@@ -13,7 +13,6 @@
   --line: #262622;
   --line-2: #2c2c28;
   --acc: #ecebe6;
-  --fg: var(--ink);  /* alias read by public/portrait.js until it moves to --ink */
   --display: "Geist", "Helvetica Neue", Arial, sans-serif;
   --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --serif: "Newsreader", Georgia, serif;
