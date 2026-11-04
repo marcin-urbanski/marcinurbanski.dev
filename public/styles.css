@@ -172,6 +172,10 @@ html.motion .home-page [data-words].is-lit {
 .home-page .hp-models { display: flex; flex-wrap: wrap; gap: clamp(14px, 2vw, 28px); }
 .home-page .hp-model { display: flex; flex-direction: column; gap: 10px; }
 .home-page .hp-model pre { margin: 0; font: 400 10px/1.3 var(--mono); color: var(--ink); }
+/* Runs grid cells while effects.js fills it */
+.home-page .hp-run-done { color: var(--ink); }
+.home-page .hp-run-current { color: var(--acc); }
+.home-page .hp-run-pending { color: var(--ascii-dim); }
 
 /* Rows (projects and writing): the whole row is a link that inverts on hover */
 .home-page .hp-row { display: flex; flex-wrap: wrap; align-items: baseline; padding-inline: 0; border-bottom: 1px solid var(--line); color: var(--ink); transition: background-color .5s var(--ease), color .5s var(--ease), padding .6s var(--ease); }
@@ -195,6 +199,8 @@ html.motion .home-page [data-words].is-lit {
 .home-page .hp-copy { display: flex; align-items: center; min-height: 48px; padding: 0 20px; background: transparent; border: 1px solid var(--ascii-dim); color: var(--ink); font: 400 13px/normal var(--mono); cursor: pointer; transition: border-color .3s, color .3s; }
 .home-page .hp-copy:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 .home-page .hp-ul { border-bottom: 1px solid var(--ascii-dim); }
+/* Visually hidden, still read and selectable: site.js's live region and the address it selects as a fallback */
+.home-page .hp-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* 8 Footer (overrides the shared footer rules) */
 .home-page .hp-foot { position: relative; z-index: 1; align-items: center; gap: 16px 24px; margin-top: 0; padding: 24px var(--home-gutter-r) 24px var(--home-gutter-l); font: 400 13px/normal var(--mono); }
@@ -215,6 +221,11 @@ html.motion .home-page [data-words].is-lit {
 /* Custom cursor: created by effects.js (not on hover: none), which sets its size and position */
 .home-page .hp-cursor { position: fixed; left: 0; top: 0; z-index: 80; width: 10px; height: 10px; pointer-events: none; background: var(--acc); border: 1px solid var(--acc); transform: translate3d(-100px, -100px, 0); transition: background-color .3s, border-radius .3s; }
 .home-page .hp-cursor.is-hot { background: none; border-radius: 50%; }
+
+/* Work row hover preview: created by effects.js (hover: hover only), which sets its opacity and position */
+.home-page .hp-pv { position: fixed; left: 0; top: 0; z-index: 60; width: 320px; padding: 14px; pointer-events: none; background: var(--surface); border: 1px solid var(--line-2); font: 400 12px/normal var(--mono); color: var(--muted-1); transition: opacity .35s ease; }
+.home-page .hp-pv-head { display: flex; justify-content: space-between; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line-2); }
+.home-page .hp-pv-term { margin: 0; font: inherit; line-height: 1.7; color: var(--ink); }
 
 /* Motion start states: only under the classes the <head> script adds, so the page shows without effects.js.
    html.intro covers the page until the loader exists; effects.js adds .hero-in to <html> and .is-in to [data-io]. */

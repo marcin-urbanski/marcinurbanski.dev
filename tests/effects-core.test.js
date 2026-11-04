@@ -1,8 +1,9 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
-  scrambleText, easeOutCubic, easeOutQuart, easeInOutQuad, loaderState, formatCount, runsFrame, litPercent,
-  londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, frameDt, createLoop, loaderKey
+  scrambleText, easeOutCubic, easeOutQuart, easeInOutQuad, loaderState, formatCount, countFrame, runsFrame,
+  litPercent, londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, decayVelocityMs, frameDt,
+  createLoop, loaderKey
 } = require("../public/effects-core.js");
 
 const near = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
@@ -276,12 +277,39 @@ test("lerp moves as two frames with dt = 2", () => {
   assert.equal(lerp(0, 100, .25, 2), 43.75);
 });
 
+test("countFrame starts the count-up at 0", () => {
+  assert.equal(countFrame(1080, 0), "0");
+});
+
+test("countFrame eases the count out over 2.4s with ease-out-quart", () => {
+  assert.equal(countFrame(1080, 1200), "1,013");
+});
+
+test("countFrame ends on the formatted target at 2.4s and after", () => {
+  assert.equal(countFrame(1080, 2400), "1,080");
+  assert.equal(countFrame(1080, 9000), "1,080");
+});
+
+test("countFrame stays at 0 before it starts", () => {
+  assert.equal(countFrame(1080, -100), "0");
+});
+
 test("decayVelocity loses 10% per frame", () => {
   assert.equal(decayVelocity(10, 1), 9);
 });
 
 test("decayVelocity loses 10% twice with dt = 2", () => {
   assert.ok(near(decayVelocity(10, 2), 8.1));
+});
+
+test("decayVelocityMs loses 10% per 60fps frame of elapsed time", () => {
+  assert.ok(near(decayVelocityMs(10, 1000 / 60), 9));
+  assert.ok(near(decayVelocityMs(10, 2000 / 60), 8.1));
+});
+
+test("decayVelocityMs keeps the velocity when no time or negative time has passed", () => {
+  assert.equal(decayVelocityMs(10, 0), 10);
+  assert.equal(decayVelocityMs(10, -50), 10);
 });
 
 test("frameDt measures elapsed time in 60fps frames", () => {

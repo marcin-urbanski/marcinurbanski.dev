@@ -41,6 +41,10 @@
 
   const formatCount = n => Math.round(n).toLocaleString("en-GB");
 
+  // The study's counter `elapsedMs` into its count-up (.dc.html:290): 0 to `target` over 2.4s, eased out.
+  const COUNT_MS = 2400;
+  const countFrame = (target, elapsedMs) => formatCount(target * easeOutQuart(clamp(elapsedMs / COUNT_MS, 0, 1)));
+
   // One frame of a model's runs grid (.dc.html:309–323): 360 runs as 12 rows of 30 cells (4 setups x 3
   // requests, a blank line between setups), later models a little behind. Returns the grid's lines, each a
   // list of { state: "done" | "current" | "pending", text } segments for the DOM code to wrap and colour.
@@ -93,6 +97,8 @@
 
   // Scroll velocity loses 10% a frame (.dc.html:436).
   const decayVelocity = (v, dt) => v * .9 ** dt;
+  // The same decay over `ms` of wall time (none for a negative span), for velocity kept between frames.
+  const decayVelocityMs = (v, ms) => decayVelocity(v, Math.max(0, ms) / (1000 / 60));
 
   // Elapsed time in 60fps frames, the `dt` every per-frame function takes; capped at 3 after a stall.
   const frameDt = elapsedMs => clamp(elapsedMs / (1000 / 60), 0, 3);
@@ -129,8 +135,9 @@
   }
 
   const api = {
-    scrambleText, easeOutCubic, easeOutQuart, easeInOutQuad, loaderState, formatCount, runsFrame, litPercent,
-    londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, frameDt, createLoop, loaderKey
+    scrambleText, easeOutCubic, easeOutQuart, easeInOutQuad, loaderState, formatCount, countFrame, runsFrame,
+    litPercent, londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, decayVelocityMs, frameDt,
+    createLoop, loaderKey
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.EffectsCore = api;

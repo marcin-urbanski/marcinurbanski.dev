@@ -1,6 +1,6 @@
 // The home page runtime: the page's one frame loop (window.SiteLoop), the intro loader, the hero line reveal,
 // reveal on scroll, the header clock, the text scramble (window.SiteEffects.scramble), the custom cursor, the
-// scroll-lit approach text and the strip. The maths is in effects-core.js. The <head> script in index.html adds
+// scroll-lit approach text, the strip, the study's count-up and runs grids, and the work row preview panel. The maths is in effects-core.js. The <head> script in index.html adds
 // `motion` (and `intro` while this tab has not seen the loader) to <html>; styles.css keeps start states under
 // those classes only, and the head script drops them after 4s unless this file has set data-fx="on".
 (() => {
@@ -147,7 +147,7 @@
     if (!track) return;
     let half = 0, x = 0, vel = 0, velAt = 0, dir = 1, lastY = window.scrollY;
     const measure = () => { half = track.scrollWidth / 2; };
-    const velocity = now => core.decayVelocity(vel, Math.max(0, now - velAt) / (1000 / 60));
+    const velocity = now => core.decayVelocityMs(vel, now - velAt);
     window.addEventListener("scroll", () => {
       const y = window.scrollY, d = y - lastY, now = performance.now();
       lastY = y;
@@ -163,6 +163,86 @@
       const v = velocity(now);
       x = core.stripStep(x, half, v, dir, dt);
       track.style.transform = "translate3d(" + x + "px,0,0) skewX(" + core.stripSkew(v) + "deg)";
+    });
+  }
+
+  // Runs `render(elapsedMs)` from the loop once `threshold` of `node` is on screen, while it stays on screen,
+  // until `render` returns true (finished).
+  function playOnce(node, threshold, render) {
+    const io = new IntersectionObserver(entries => {
+      if (!entries.some(e => e.isIntersecting)) return;
+      io.disconnect();
+      const start = performance.now();
+      const stop = window.SiteLoop.whileVisible(node, (dt, now) => { if (render(now - start)) stop(); });
+    }, { threshold });
+    io.observe(node);
+  }
+
+  // README section 5: the study's counter counts up from 0 over 2.4s once 40% of it is in view. Without motion
+  // it keeps the final count the HTML shows.
+  function setupCount() {
+    document.querySelectorAll("[data-count]").forEach(node => {
+      const target = +node.dataset.count;
+      node.textContent = core.countFrame(target, 0);
+      playOnce(node, .4, ms => {
+        node.textContent = core.countFrame(target, ms);
+        return ms >= 2400;
+      });
+    });
+  }
+
+  // README section 5: each runs grid fills over 3s once 35% of the block is in view, later models a little
+  // behind. Done, current and pending cells are spans that styles.css colours. Without motion the <pre>s keep
+  // the full grids the HTML shows.
+  function setupRuns() {
+    const host = document.querySelector("[data-runs-host]"), pres = [...document.querySelectorAll("[data-runs]")];
+    if (!host || !pres.length) return;
+    const render = p => pres.forEach((pre, i) => {
+      const frag = document.createDocumentFragment();
+      core.runsFrame(p, i).forEach((line, r) => {
+        if (r) frag.append("\n");
+        line.forEach(seg => frag.append(el("span", "hp-run-" + seg.state, seg.text)));
+      });
+      pre.replaceChildren(frag);
+    });
+    render(0);
+    playOnce(host, .35, ms => {
+      render(ms / 3000);
+      return ms >= 3000;
+    });
+  }
+
+  // README section 5 "Hover preview panel": over a [data-preview] row a 320px panel, cloned from
+  // <template id="preview-{name}">, follows the pointer (+28px, kept in the viewport) at .14 and leans into the
+  // distance still to go; it fades in and out (styles.css). Desktop only. Without motion it snaps, unrotated.
+  function setupPreview() {
+    if (!matchMedia("(hover: hover)").matches) return;
+    document.querySelectorAll("[data-preview]").forEach(row => {
+      const tpl = document.getElementById("preview-" + row.dataset.preview);
+      if (!tpl) return;
+      const panel = el("div", "hp-pv");
+      panel.setAttribute("aria-hidden", "true");
+      panel.append(tpl.content.cloneNode(true));
+      panel.style.opacity = "0";
+      document.body.append(panel);
+      const pointer = { x: 0, y: 0 };
+      let cur = null;
+      const step = dt => {
+        cur = core.previewPos(pointer, motion() ? cur : null, { w: window.innerWidth, h: window.innerHeight }, dt);
+        panel.style.transform = "translate3d(" + cur.x + "px," + cur.y + "px,0) rotate(" + cur.rot + "deg)";
+      };
+      const track = e => { pointer.x = e.clientX; pointer.y = e.clientY; };
+      row.addEventListener("mouseenter", e => {
+        track(e);
+        cur = null;
+        panel.style.opacity = "1";
+        loop.add(step);
+      });
+      row.addEventListener("mousemove", track);
+      row.addEventListener("mouseleave", () => {
+        loop.remove(step);
+        panel.style.opacity = "0";
+      });
     });
   }
 
@@ -219,21 +299,26 @@
     window.SiteLoop = {
       add: loop.add,
       remove: loop.remove,
-      // Runs `fn` in the loop only while `node` is on screen.
+      // Runs `fn` in the loop only while `node` is on screen; the returned function stops it for good.
       whileVisible(node, fn) {
-        new IntersectionObserver(entries => {
+        const io = new IntersectionObserver(entries => {
           if (entries[entries.length - 1].isIntersecting) loop.add(fn); else loop.remove(fn);
-        }).observe(node);
+        });
+        io.observe(node);
+        return () => { io.disconnect(); loop.remove(fn); };
       }
     };
     window.SiteEffects = { scramble };
     setupClock();
     setupCursor();
+    setupPreview();
     if (motion()) {
       setupReveal();
       setupScramble();
       setupLitText();
       setupStrip();
+      setupCount();
+      setupRuns();
       if (root.classList.contains("intro")) setupLoader(); else intro();
     }
     root.dataset.fx = "on";
