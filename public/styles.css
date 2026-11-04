@@ -204,6 +204,12 @@ html:has(> body.home-page) { scroll-behavior: smooth; }
   .home-page .hp-copy:hover { border-color: var(--acc); color: var(--acc); }
 }
 
+/* Touch screens: 44px tap targets for the small mono links; the underlined contact links keep the line under the text */
+@media (pointer: coarse) {
+  .home-page .hp-head a, .home-page .hp-foot a, .home-page .hp-sec-aside a { display: inline-flex; align-items: center; min-height: 44px; }
+  .home-page .hp-ul { display: inline-flex; align-items: flex-end; min-height: 44px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html:has(> body.home-page) { scroll-behavior: auto; }
   .home-page .hp-btn, .home-page .hp-row, .home-page .hp-copy { transition: none; }

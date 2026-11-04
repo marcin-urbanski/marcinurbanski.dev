@@ -72,7 +72,7 @@ test("every body sentence of the previous home page is in the markup", () => {
 
 test("sections use the design's headings and labels", () => {
   const h2s = [...html.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map(m => text(m[1]).trim());
-  assert.deepEqual(h2s, ["Selected work", "Writing", "(04) — contact"]);
+  assert.deepEqual(h2s, ["(01) — approach", "Selected work", "Writing", "(04) — contact"]);
   for (const s of ["(01) — approach", "(02) — 3 projects", "(03) — notes & studies", "back to top ↑"]) {
     assert.ok(bodyText.includes(s), s);
   }
@@ -128,6 +128,18 @@ test("the old home-only rules are gone from the stylesheet", () => {
     ".writing", ".rt", ".mail", ".contact-lead", ".contact-alt", ".sec-title"]) {
     const re = new RegExp(`(^|[\\s,}])${sel.replace(".", "\\.")}(?![\\w-])[^{}]*\\{`, "m");
     assert.doesNotMatch(css, re, sel);
+  }
+});
+
+test("header and footer links are at least 44px tall on touch screens", () => {
+  const block = css.match(/@media \(pointer: coarse\) \{([\s\S]*?)\n\}/);
+  assert.ok(block, "a (pointer: coarse) block");
+  for (const sel of [".home-page .hp-head a", ".home-page .hp-foot a"]) {
+    const rule = [...block[1].matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .find(([, s]) => s.split(",").map(x => x.trim()).includes(sel));
+    assert.ok(rule, sel);
+    const min = rule[2].match(/min-height:\s*(\d+)px/);
+    assert.ok(min && Number(min[1]) >= 44, `${sel} min-height`);
   }
 });
 
