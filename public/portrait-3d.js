@@ -43,9 +43,11 @@
     return 1 + strength * ((n[0] * l[0] + n[1] * l[1] + n[2] * l[2]) / ll - n[2]);
   }
 
-  // One frame of easing towards a target; lands exactly on it once close, so at rest the face is exactly flat.
-  function ease(v, target) {
-    return Math.abs(target - v) < 1e-3 ? target : v + (target - v) * .08;
+  // Easing towards a target, .08 of the way a 60fps frame, over dt such frames (as EffectsCore.lerp), so the
+  // turn has the same speed at any refresh rate; lands exactly on the target once close, so at rest the face
+  // is exactly flat.
+  function ease(v, target, dt = 1) {
+    return Math.abs(target - v) < 1e-3 ? target : v + (target - v) * (1 - (1 - .08) ** dt);
   }
 
   // Position p as -1 .. 1 from centre c to the edge of 0 .. size on that side, so the turn reaches its

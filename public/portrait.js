@@ -50,7 +50,7 @@
     }
   }
 
-  function update3d(now) {
+  function update3d(now, dt) {
     let ty, tp, tlx, tly;
     if (pointer && now - movedAt < 2.5) {
       const fx = OX + GW * S / 2, fy = heroTop - window.scrollY + OY + GH * S / 2;   // face centre on screen
@@ -59,7 +59,7 @@
     } else {                                              // a slow sway, lit from the upper left
       ty = Math.sin(now * .45) * YAW * .7; tp = Math.sin(now * .31 + 1) * PITCH * .5; tlx = -.35; tly = -.45;
     }
-    yaw = ease(yaw, ty); pitch = ease(pitch, tp); lx = ease(lx, tlx); ly = ease(ly, tly);
+    yaw = ease(yaw, ty, dt); pitch = ease(pitch, tp, dt); lx = ease(lx, tlx, dt); ly = ease(ly, tly, dt);
     const key = [yaw, pitch, lx, ly].map(v => v.toFixed(4)).join();
     if (key !== built) { built = key; computeBase(yaw, pitch, [lx, ly, 1]); }
   }
@@ -155,10 +155,10 @@
     return RAMP[Math.max(1, Math.min(RAMP.length - 1, i))];
   };
 
-  function drawFace(t) {
+  function drawFace(t, dt = 1) {
     const top = heroTop - window.scrollY;
     if (top + FH < 0) return;                              // hero scrolled out of view
-    if (!still) update3d(t);
+    if (!still) update3d(t, dt);
     fctx.clearRect(0, 0, FW, FH);
     fctx.textBaseline = "top";
 
@@ -265,7 +265,7 @@
   // draws only while the hero is on screen.
   if (!still) {
     window.SiteLoop.add((dt, now) => step(now / 1000, dt / 60));
-    window.SiteLoop.whileVisible(face, (dt, now) => drawFace(now / 1000));
+    window.SiteLoop.whileVisible(face, (dt, now) => drawFace(now / 1000, dt));
   }
   // Re-measure once Geist Mono is in: the cell width comes from the font.
   document.fonts.load("7px " + MONO).then(() => document.fonts.ready).then(() => { measure(); drawFace(0); }, () => {});

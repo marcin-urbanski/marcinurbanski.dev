@@ -77,6 +77,21 @@ test("ease moves part of the way towards a distant target", () => {
   assert.ok(v > 0 && v < .2, `${v}`);
 });
 
+test("ease over dt = 2 frames moves as two one-frame steps", () => {
+  const v = ease(.17, -.05, 2), twice = ease(ease(.17, -.05), -.05);
+  assert.ok(near(v, twice, 1e-12), `${v} vs ${twice}`);
+});
+
+test("ease over a fraction of a frame moves less than one frame", () => {
+  const v = ease(0, 1, .5);
+  assert.ok(v > 0 && v < ease(0, 1), `${v}`);
+});
+
+test("ease still lands exactly on its target once close, whatever dt", () => {
+  assert.equal(ease(.1005, .1, 2), .1);
+  assert.equal(ease(.1005, .1, .5), .1);
+});
+
 test("toEdge spans -1 .. 1 from an off-centre point to each viewport edge", () => {
   assert.equal(toEdge(900, 900, 1280), 0);
   assert.equal(toEdge(0, 900, 1280), -1);
