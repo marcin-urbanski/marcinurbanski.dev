@@ -365,3 +365,17 @@ test("createLoop skips a callback removed earlier in the same frame", () => {
   frames.tick(0);
   assert.equal(ran, false);
 });
+
+test("createLoop ignores a callback added again after it threw", () => {
+  const frames = fakeFrames(), errors = [];
+  let calls = 0;
+  const bad = () => { calls++; throw new Error("boom"); };
+  const loop = createLoop(frames.request, e => errors.push(e.message));
+  loop.add(bad);
+  loop.add(() => {});
+  frames.tick(0);
+  loop.add(bad);
+  frames.tick(16);
+  assert.equal(calls, 1);
+  assert.deepEqual(errors, ["boom"]);
+});

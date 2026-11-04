@@ -96,23 +96,23 @@
   const frameDt = elapsedMs => clamp(elapsedMs / (1000 / 60), 0, 3);
 
   // The page's one frame loop (window.SiteLoop): callbacks get (dt, now) every frame. One that throws is
-  // dropped and reported once through `onError`; the others keep running. With no callbacks left the loop
-  // stops asking for frames, and its first frame after a (re)start has dt 1.
+  // dropped for good (adding it again does nothing) and reported once through `onError`; the others keep
+  // running. With no callbacks left the loop stops asking for frames, and its first frame after a (re)start has dt 1.
   function createLoop(requestFrame, onError) {
-    const fns = new Set();
+    const fns = new Set(), failed = new WeakSet();
     let running = false, last = null;
     function frame(now) {
       const dt = last === null ? 1 : frameDt(now - last);
       last = now;
       for (const fn of [...fns]) {
         if (!fns.has(fn)) continue;
-        try { fn(dt, now); } catch (e) { fns.delete(fn); onError(e); }
+        try { fn(dt, now); } catch (e) { fns.delete(fn); failed.add(fn); onError(e); }
       }
       if (fns.size) requestFrame(frame);
       else { running = false; last = null; }
     }
     return {
-      add(fn) { fns.add(fn); if (!running) { running = true; requestFrame(frame); } },
+      add(fn) { if (failed.has(fn)) return; fns.add(fn); if (!running) { running = true; requestFrame(frame); } },
       remove(fn) { fns.delete(fn); }
     };
   }

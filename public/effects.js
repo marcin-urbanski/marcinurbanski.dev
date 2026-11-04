@@ -1,6 +1,7 @@
-// The home page runtime: the page's one frame loop (window.SiteLoop), the intro loader, the hero line reveal and
-// reveal on scroll. The maths is in effects-core.js. The <head> script in index.html adds `motion` (and `intro`
-// while this tab has not seen the loader) to <html>; styles.css keeps start states under those classes only, and
+// The home page runtime: the page's one frame loop (window.SiteLoop), the intro loader, the hero line reveal,
+// reveal on scroll, the header clock, the text scramble (window.SiteEffects.scramble) and the custom cursor. The
+// maths is in effects-core.js. The <head> script in index.html adds `motion` (and `intro` while this tab has not
+// seen the loader) to <html>; styles.css keeps start states under those classes only, and
 // the head script drops them after 4s unless this file has set data-fx="on".
 (() => {
   const root = document.documentElement, core = window.EffectsCore, LOADER_KEY = "loader-seen";
@@ -15,11 +16,102 @@
     return node;
   };
 
-  // The hero headline lines slide up (styles.css, html.hero-in); later tasks add the greeting scramble here.
+  let loop = null;
+  const motion = () => root.classList.contains("motion");
+
+  // README "Text scramble": `node`'s text resolves into `to` over `ms`; a new call on the same element replaces
+  // the running one. Without motion the text is swapped at once.
+  const scrambles = new WeakMap();
+  function scramble(node, to, ms = 650) {
+    loop.remove(scrambles.get(node));
+    if (!motion()) { node.textContent = to; return; }
+    const from = node.textContent, start = performance.now();
+    const step = (dt, now) => {
+      const p = (now - start) / ms;
+      node.textContent = core.scrambleText(from, to, p, Math.random);
+      if (p >= 1) loop.remove(step);
+    };
+    scrambles.set(node, step);
+    loop.add(step);
+  }
+
+  // Links and the email ([data-scramble]) scramble on hover; an H2's [data-scramble-part] lines do too, 700ms
+  // each, 90ms apart. Label <h2>s carry neither attribute and stay still. Hover effects are desktop only.
+  function setupScramble() {
+    const hover = matchMedia("(hover: hover)");
+    document.querySelectorAll("[data-scramble]").forEach(node => {
+      const text = node.textContent;
+      node.addEventListener("mouseenter", () => { if (hover.matches) scramble(node, text); });
+    });
+    document.querySelectorAll("[data-scramble-group]").forEach(group => {
+      const parts = [...group.querySelectorAll("[data-scramble-part]")].map(node => [node, node.textContent]);
+      group.addEventListener("mouseenter", () => {
+        if (hover.matches) parts.forEach(([node, text], i) => setTimeout(() => scramble(node, text, 700), i * 90));
+      });
+    });
+  }
+
+  // The hero headline lines slide up (styles.css, html.hero-in) and the greeting scrambles in 350ms later.
   function intro() {
     const line = document.querySelector("[data-line]");
     if (line) void getComputedStyle(line).transform;  // commit the start state so the change transitions
     root.classList.add("hero-in");
+    const hi = document.querySelector("[data-hi]");
+    if (!hi) return;
+    const text = hi.textContent;
+    hi.textContent = "";
+    setTimeout(() => scramble(hi, text, 1000), 350);
+  }
+
+  // The header clock: Europe/London HH:MM:SS, every second.
+  function setupClock() {
+    const clock = document.querySelector("[data-clock]");
+    if (!clock) return;
+    const tick = () => { clock.textContent = core.londonTime(new Date()); };
+    tick();
+    setInterval(tick, 1000);
+  }
+
+  // README "Custom cursor": a 10px accent square that follows the pointer at .25 and grows to a 56px circle
+  // outline (.is-hot) at .2 over links and buttons. Not created on (hover: none). Without motion it snaps.
+  // It runs in the loop only until it has caught up with the pointer.
+  function setupCursor() {
+    if (matchMedia("(hover: none)").matches) return;
+    const cursor = el("div", "hp-cursor");
+    cursor.setAttribute("aria-hidden", "true");
+    document.body.append(cursor);
+    const target = { x: 0, y: 0, s: 10 };
+    let cur = null;
+    const step = dt => {
+      const smooth = motion() && cur;
+      cur = smooth ? {
+        x: core.lerp(cur.x, target.x, .25, dt), y: core.lerp(cur.y, target.y, .25, dt), s: core.lerp(cur.s, target.s, .2, dt)
+      } : { ...target };
+      if (Math.abs(cur.x - target.x) < .1 && Math.abs(cur.y - target.y) < .1 && Math.abs(cur.s - target.s) < .05) {
+        cur = { ...target };
+        loop.remove(step);
+      }
+      cursor.style.width = cursor.style.height = cur.s + "px";
+      cursor.style.transform = "translate3d(" + (cur.x - cur.s / 2) + "px," + (cur.y - cur.s / 2) + "px,0)";
+    };
+    window.addEventListener("pointermove", e => {
+      if (e.pointerType === "touch") return;
+      target.x = e.clientX;
+      target.y = e.clientY;
+      loop.add(step);
+    }, { passive: true });
+    document.addEventListener("mouseover", e => {
+      const hot = !!e.target.closest("a, button");
+      cursor.classList.toggle("is-hot", hot);
+      target.s = hot ? 56 : 10;
+      if (cur) loop.add(step);
+    });
+    // Off the window: hide it at once and snap back on the way in.
+    root.addEventListener("mouseleave", () => {
+      loop.remove(step);
+      cur = null;
+      cursor.style.transform = "";
+    });
   }
 
   // [data-io] elements rise in once, when 12% of them is on screen (README "Scroll reveal").
@@ -32,9 +124,9 @@
     document.querySelectorAll("[data-io]").forEach(node => io.observe(node));
   }
 
-  // README section 0: 1.7s of counter, bar and log, a 220ms hold, then a 1s wipe up. A click skips it and a
-  // 2.6s timer closes it if frames are throttled. Shown once per tab.
-  function setupLoader(loop) {
+  // README section 0: 1.7s of counter, bar and log, a 220ms hold, then a 1s wipe up. A click or any key skips it
+  // and a 2.6s timer closes it if frames are throttled. Shown once per tab.
+  function setupLoader() {
     try { sessionStorage.setItem(LOADER_KEY, "1"); } catch (e) {}
     const log = el("pre", "hp-loader-log"), bar = el("pre", "hp-loader-bar"), num = el("span", "hp-loader-num");
     const show = state => { num.textContent = state.count; bar.textContent = state.bar; log.textContent = state.lines.join("\n"); };
@@ -55,6 +147,7 @@
       if (closed) return;
       closed = true;
       loop.remove(step);
+      document.removeEventListener("keydown", close);
       loader.classList.add("is-out");
       root.classList.remove("intro");
       setTimeout(intro, 250);
@@ -66,13 +159,14 @@
       if (state.done) { loop.remove(step); setTimeout(close, 220); }
     };
     loader.addEventListener("click", close, { once: true });
+    document.addEventListener("keydown", close, { once: true });
     setTimeout(close, 2600);
     document.body.append(loader);
     loop.add(step);
   }
 
   try {
-    const loop = core.createLoop(frame => requestAnimationFrame(frame), e => console.error(e));
+    loop = core.createLoop(frame => requestAnimationFrame(frame), e => console.error(e));
     window.SiteLoop = {
       add: loop.add,
       remove: loop.remove,
@@ -83,9 +177,13 @@
         }).observe(node);
       }
     };
-    if (root.classList.contains("motion")) {
+    window.SiteEffects = { scramble };
+    setupClock();
+    setupCursor();
+    if (motion()) {
       setupReveal();
-      if (root.classList.contains("intro")) setupLoader(loop); else intro();
+      setupScramble();
+      if (root.classList.contains("intro")) setupLoader(); else intro();
     }
     root.dataset.fx = "on";
   } catch (e) {
