@@ -380,6 +380,12 @@ test("portrait-data.json holds the 320x393 brightness grid and the 160x197 depth
   assert.equal(Buffer.from(depth.b64, "base64").length, 31520);
 });
 
+// The depth grid's base64 string is ~42 KB; once decoded, the script should not keep it alive.
+test("portrait.js keeps only the decoded depth grid and its sizes", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  assert.match(js, /DEPTH = \{ w: depth\.w, h: depth\.h, scale: depth\.scale, data: d \}/);
+});
+
 test("portrait.js holds no data and is under 22,000 bytes", () => {
   const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
   assert.doesNotMatch(js, /atob\(/);

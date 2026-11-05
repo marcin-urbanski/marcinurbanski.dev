@@ -367,7 +367,7 @@
     if (!r.ok) throw new Error("portrait-data.json: HTTP " + r.status);
     return r.json();
   }).then(({ lum, depth }) => Promise.all([bytes(lum.b64), bytes(depth.b64)]).then(([l, d]) => {
-    LUM = l; GW = lum.w; GH = lum.h; ANGLE_STEP = .5 / (GW * RELIEF); DEPTH = { ...depth, data: d };
+    LUM = l; GW = lum.w; GH = lum.h; ANGLE_STEP = .5 / (GW * RELIEF); DEPTH = { w: depth.w, h: depth.h, scale: depth.scale, data: d };
   }));
   afterPaint(() => loadGrids().then(() => firstMeasure(whenIdle), e => console.error(e)));
   // Re-measure once Geist Mono is in: the cell width comes from the font. During the first measure that matters
