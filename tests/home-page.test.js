@@ -384,3 +384,10 @@ test("on phones the hero text starts below the face box", () => {
   assert.ok(block, "a max-width: 759px block");
   assert.match(block[1], /\.home-page \.hero \{ padding-top: calc\(64px \+ 90vw \* 393 \/ 320 \+ 16px\); \}/);
 });
+
+test("the meta and og descriptions repeat the hero headline and subline", () => {
+  const hero = "Designer turned developer. Senior web developer with a designer's eye. I build for the web, and lately " +
+    "with AI agents, testing what actually makes them reliable.";
+  assert.ok(html.includes(`<meta name="description" content="${hero}">`), "meta description");
+  assert.ok(html.includes(`<meta property="og:description" content="${hero}">`), "og:description");
+});
