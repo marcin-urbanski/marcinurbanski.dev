@@ -238,7 +238,7 @@ test("the page has no inline styles", () => {
 });
 
 test("scripts load in the plan's order: effects-core, effects, site, portrait-3d, portrait", () => {
-  const srcs = [...html.matchAll(/<script[^>]*src="([^"]+)"/g)].map(m => m[1]);
+  const srcs = [...html.matchAll(/<script[^>]*src="([^"?]+)/g)].map(m => m[1]);
   assert.deepEqual(srcs, ["/effects-core.js", "/effects.js", "/site.js", "/portrait-3d.js", "/portrait.js"]);
 });
 
@@ -262,7 +262,7 @@ const LOADER_KEY = "loader-seen";
 
 test("the head script runs before the stylesheet loads", () => {
   assert.ok(headScript, "an inline script in <head>");
-  assert.ok(html.indexOf(headScript) < html.indexOf('href="/styles.css"'));
+  assert.ok(html.indexOf(headScript) < html.indexOf('href="/styles.css?v='));
 });
 
 test("the head script adds motion and intro on a first visit", () => {

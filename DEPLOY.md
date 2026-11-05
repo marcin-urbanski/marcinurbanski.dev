@@ -11,8 +11,12 @@ wrangler pages dev --port 8788    # http://localhost:8788, serves _headers and 4
 ## Deploy
 
 ```bash
+node tools/asset-versions.js    # after changing any .js or .css: new ?v= hashes in the HTML (the tests check them)
 wrangler pages deploy --branch main
 ```
+
+The zone lets browsers keep JS and CSS for 4 hours, while HTML is always revalidated. The `?v=` hash in each
+script and stylesheet URL is what makes a returning visitor fetch the new file after a deploy.
 
 First deploy (2026-11-04): `wrangler pages project create marcinurbanski --production-branch main`, then the steps
 below in the Cloudflare dashboard.
