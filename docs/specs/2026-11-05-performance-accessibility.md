@@ -181,5 +181,5 @@ Any visual or copy change; the intro loader's design; a build step or bundler; c
   no frame callback.
 - **AC 8, fonts:** Geist's latin-ext file is self-hosted too (not preloaded), because the post's "zł" uses it today.
 - **AC 13, summary:** overall, per model and per request (3 + 3 numbers), printed by `tools/study-runs.py`.
-- **AC 10, script size:** portrait.js holds no data and is under 20,000 bytes (its code alone is about 15 KB).
+- **AC 10, script size:** portrait.js holds no data (no base64, no `atob`) and is under 22,000 bytes; the size is a guard against data creeping back, not a target (its code alone was about 15 KB, and the after-paint start adds about 5 KB).
 - **AC 17, share cards:** on indexable pages (home and posts); the 404 is `noindex` and gets only the touch icon.
