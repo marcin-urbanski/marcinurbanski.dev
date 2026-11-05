@@ -109,7 +109,40 @@
     return mask;
   }
 
-  const api = { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects, cellInZones, fieldMask };
+  // The box { x0, x1, y0, y1 } (start inclusive, end exclusive) of the cells `cover` marks in a cols x rows grid,
+  // grown by `margin` cells on every side and clipped to the grid; empty (x0 === x1) when no cell is marked.
+  // portrait.js computes the turned face only inside it.
+  function coverBounds(cover, cols, rows, margin) {
+    let x0 = cols, x1 = 0, y0 = rows, y1 = 0;
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+      if (!cover[y * cols + x]) continue;
+      if (x < x0) x0 = x;
+      if (x >= x1) x1 = x + 1;
+      if (y < y0) y0 = y;
+      y1 = y + 1;
+    }
+    if (x0 >= x1) return { x0: 0, x1: 0, y0: 0, y1: 0 };
+    return { x0: Math.max(0, x0 - margin), x1: Math.min(cols, x1 + margin), y0: Math.max(0, y0 - margin), y1: Math.min(rows, y1 + margin) };
+  }
+
+  // v rounded to the nearest multiple of step.
+  function quantise(v, step) {
+    return Math.round(v / step) * step;
+  }
+
+  // A key that changes only when the turn (yaw, pitch, in angleStep) or the light (lx, ly, in lightStep) moves
+  // to another step, so the face is recomputed only when a sampled point would move.
+  function turnKey(yaw, pitch, lx, ly, angleStep, lightStep) {
+    return [quantise(yaw, angleStep), quantise(pitch, angleStep), quantise(lx, lightStep), quantise(ly, lightStep)].join();
+  }
+
+  // The steady number of bubbles that build the portrait: a quarter of the page height in px and at most 900;
+  // 60% of that under 860px wide, and 60% again on 4 CPU cores or fewer (when the browser tells).
+  function bubbleCount(docH, vw, cores) {
+    return Math.round(Math.min(900, docH / 4) * (vw < 860 ? .6 : 1) * (typeof cores === "number" && cores <= 4 ? .6 : 1));
+  }
+
+  const api = { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects, cellInZones, fieldMask, coverBounds, quantise, turnKey, bubbleCount };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Portrait3D = api;
 })(this);

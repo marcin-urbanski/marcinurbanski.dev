@@ -20,22 +20,26 @@
   const bub = document.getElementById("bubbles"), bctx = bub.getContext("2d");
 
   let dpr, fs, cw, ch, FW, FH, cols, rows, c0, base, filled, glow, jitter, targets;
-  let VW, VH, docH, heroTop, pointer = null;
+  let VW, VH, docH, heroTop, pointer = null, scrollTop = window.scrollY;
   // README "Background field": its font, cell, size, the cells the face covers (fmask) and one reused row.
   let ffs, fcw, fch, fcols, frows, fmask, frow;
 
   // 3D: the face turns a little towards the pointer (near points move more than far ones) and a soft light
   // follows it; after a few still seconds, and on touch screens, it sways slowly. Characters stay as above.
-  const { sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, cellInZones, fieldMask } = window.Portrait3D;
+  const { sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, cellInZones, fieldMask, coverBounds, quantise, turnKey, bubbleCount } = window.Portrait3D;
   const YAW = .17, PITCH = .1, RELIEF = .3, LIGHT = .55;   // max turn (rad), depth as share of face width, light strength
+  // The turn and the light are recomputed only in these steps. A point at full relief moves
+  // (d - .5) * sin(yaw) * GW * RELIEF grid points, so one angle step moves the face's nearest point a quarter of a
+  // grid point; a light step of .01 changes brightness by well under one character of the ramp.
+  const ANGLE_STEP = .5 / (GW * RELIEF), LIGHT_STEP = .01;
   const FRONT = [0, 0, 1];
-  let S, OX, OY, PH, yaw = 0, pitch = 0, lx = 0, ly = 0, movedAt = -1e9, built = "";
+  let S, OX, OY, PH, faceBox, yaw = 0, pitch = 0, lx = 0, ly = 0, movedAt = -1e9, built = "";
 
-  // Brightness of every face cell for a turn and a light: find the grid point drawn there, then sample
-  // brightness around it as the flat portrait does.
-  function computeBase(yw, pt, light) {
+  // Brightness of the face cells in `box` for a turn and a light: find the grid point drawn there, then sample
+  // brightness around it as the flat portrait does. Cells outside the box keep their last value.
+  function computeBase(yw, pt, light, box) {
     const Z = GW * RELIEF, shx = Math.sin(yw) * Z, shy = -Math.sin(pt) * Z;
-    for (let y = 0; y < rows; y++) for (let x = c0; x < cols; x++) {
+    for (let y = box.y0; y < box.y1; y++) for (let x = Math.max(c0, box.x0); x < box.x1; x++) {
       const gx = ((x + .5) * cw - OX) / S, gy = ((y + .5) * ch - OY) / S;
       const [sx, sy] = sourcePoint(DEPTH, gx, gy, shx, shy), dx = sx - gx, dy = sy - gy;
       let t = 0;
@@ -53,15 +57,18 @@
   function update3d(now, dt) {
     let ty, tp, tlx, tly;
     if (pointer && now - movedAt < 2.5) {
-      const fx = OX + GW * S / 2, fy = heroTop - window.scrollY + OY + GH * S / 2;   // face centre on screen
+      const fx = OX + GW * S / 2, fy = heroTop - scrollTop + OY + GH * S / 2;   // face centre on screen
       const nx = toEdge(pointer.x, fx, VW), ny = toEdge(pointer.y, fy, VH);
       ty = nx * YAW; tp = -ny * PITCH; tlx = nx * .9; tly = ny * .9;
     } else {                                              // a slow sway, lit from the upper left
       ty = Math.sin(now * .45) * YAW * .7; tp = Math.sin(now * .31 + 1) * PITCH * .5; tlx = -.35; tly = -.45;
     }
     yaw = ease(yaw, ty, dt); pitch = ease(pitch, tp, dt); lx = ease(lx, tlx, dt); ly = ease(ly, tly, dt);
-    const key = [yaw, pitch, lx, ly].map(v => v.toFixed(4)).join();
-    if (key !== built) { built = key; computeBase(yaw, pitch, [lx, ly, 1]); }
+    const key = turnKey(yaw, pitch, lx, ly, ANGLE_STEP, LIGHT_STEP);
+    if (key === built) return;
+    built = key;
+    const q = v => quantise(v, ANGLE_STEP), ql = v => quantise(v, LIGHT_STEP);
+    computeBase(q(yaw), q(pitch), [ql(lx), ql(ly), 1], faceBox);
   }
   // bubbles as parallel arrays
   let N = 0, bx0, by, sy0, vy, age, tgt, ph, amp, wave, chr;
@@ -92,18 +99,20 @@
     targets = [];
     // Every cell the face covers at its widest turns is a target, so turning almost never clips it; the few
     // dim cells an in-between turn uncovers sit next to a target and fill when it settles.
-    const reach = new Float32Array(cols * rows);
+    const reach = new Float32Array(cols * rows), grid = { x0: 0, x1: cols, y0: 0, y1: rows };
     if (!still) for (const [yw, pt] of [[YAW, 0], [-YAW, 0], [0, PITCH], [0, -PITCH], [YAW, PITCH], [YAW, -PITCH], [-YAW, PITCH], [-YAW, -PITCH]]) {
-      computeBase(yw, pt, FRONT);
+      computeBase(yw, pt, FRONT, grid);
       for (let k = 0; k < base.length; k++) reach[k] = Math.max(reach[k], base[k]);
     }
-    computeBase(0, 0, FRONT); built = "";
+    computeBase(0, 0, FRONT, grid); built = "";
     const cover = new Uint8Array(cols * rows);           // cells the face can light at any turn
     for (let y = 0; y < rows; y++) for (let x = c0; x < cols; x++) {
       const fade = faceFade((y + .5) * ch, OY + PH, PH), k = y * cols + x;
       // reach is measured without the light, which brightens a cell by less than 1 + LIGHT: a lower bar
       if (base[k] > .03 || reach[k] > .03 / (1 + LIGHT)) { cover[k] = 1; if (Math.random() < fade) targets.push(k); }
     }
+    // Later turns are computed only around the cells the face can reach; outside, base keeps the front values.
+    faceBox = coverBounds(cover, cols, rows, 2);
     // The field leaves out every cell whose top-left falls in a face cell, so it never shows through the face.
     ffs = FW < 700 ? 10 : 13;
     fctx.font = ffs + "px " + MONO;
@@ -117,7 +126,7 @@
 
   function spawnAll() {
     if (still) { N = 0; return; }
-    const steady = Math.round(Math.min(900, docH / 4) * (VW < 860 ? .6 : 1));
+    const steady = bubbleCount(docH, VW, navigator.hardwareConcurrency);
     const build = Math.round(targets.length / 6);     // each bubble settles a small cluster
     N = steady + build; steadyMax = activeSteady = steady;
     bx0 = new Float32Array(N); by = new Float32Array(N); sy0 = new Float32Array(N); vy = new Float32Array(N); age = new Float32Array(N);
@@ -156,7 +165,7 @@
   };
 
   function drawFace(t, dt = 1) {
-    const top = heroTop - window.scrollY;
+    const top = heroTop - scrollTop;
     if (top + FH < 0) return;                              // hero scrolled out of view
     if (!still) update3d(t, dt);
     fctx.clearRect(0, 0, FW, FH);
@@ -200,7 +209,9 @@
     }
   }
 
-  function step(t, secs) {
+  // draw: false while the loader covers the page; the bubbles still move and settle, so the face is as built
+  // when it lifts, but nothing is drawn.
+  function step(t, secs, draw) {
     // a few cells drift, a few fade so new bubbles always have somewhere to land
     for (let n = 0; n < targets.length * .01; n++) {
       const k = targets[(Math.random() * targets.length) | 0];
@@ -214,10 +225,12 @@
     }
     for (let k = 0; k < glow.length; k++) if (glow[k] > 0) glow[k] = Math.max(0, glow[k] - secs * 2.5);
 
-    const sy = window.scrollY;
-    bctx.clearRect(0, 0, VW, VH);
-    bctx.font = fs + 1 + "px " + MONO;
-    bctx.textBaseline = "top"; bctx.fillStyle = INK;
+    const sy = scrollTop;
+    if (draw) {
+      bctx.clearRect(0, 0, VW, VH);
+      bctx.font = fs + 1 + "px " + MONO;
+      bctx.textBaseline = "top"; bctx.fillStyle = INK;
+    }
     for (let i = 0; i < N; i++) {
       if (wave[i] === 2) continue;                          // build bubble already landed
       age[i] += secs;
@@ -232,6 +245,7 @@
         else respawn(i, docH + Math.random() * 120);
         continue;
       }
+      if (!draw) continue;
       const near = Math.max(0, 1 - dist / 220);             // 0 far below, 1 at the face
       const p = Math.max(0, Math.min(1, 1 - dist / Math.max(1, sy0[i] - ty)));   // share of the climb done
       const x = bx0[i] + (tx - bx0[i]) * p * p + Math.sin(age[i] * 2.4 + ph[i]) * amp[i] * (1 - p);
@@ -245,7 +259,7 @@
       bctx.fillText(cellChar(k, t), x, y);
       if (under) bctx.fillStyle = INK;
     }
-    bctx.globalAlpha = 1;
+    if (draw) bctx.globalAlpha = 1;
   }
 
   window.addEventListener("pointermove", e => { pointer = { x: e.clientX, y: e.clientY }; if (e.pointerType !== "touch") movedAt = performance.now() / 1000; }, { passive: true });
@@ -263,14 +277,18 @@
       measure(); drawFace(0);
     }, 150);
   });
+  // Frames read the scroll position from here, not from the layout.
+  window.addEventListener("scroll", () => { scrollTop = window.scrollY; }, { passive: true });
   if (still) window.addEventListener("scroll", () => drawFace(0), { passive: true });
 
   measure(); drawFace(0);
   // The page loop's dt is in 60fps frames; step() takes seconds. The bubbles run across the page, the face
-  // draws only while the hero is on screen.
+  // draws only while the hero is on screen. While the intro loader covers the page (<html class="intro">)
+  // neither canvas is drawn; the check stays here, so the one-time draws above still happen.
+  const covered = () => document.documentElement.classList.contains("intro");
   if (!still) {
-    window.SiteLoop.add((dt, now) => step(now / 1000, dt / 60));
-    window.SiteLoop.whileVisible(face, (dt, now) => drawFace(now / 1000, dt));
+    window.SiteLoop.add((dt, now) => step(now / 1000, dt / 60, !covered()));
+    window.SiteLoop.whileVisible(face, (dt, now) => { if (!covered()) drawFace(now / 1000, dt); });
   }
   // Re-measure once Geist Mono is in: the cell width comes from the font.
   document.fonts.load("7px " + MONO).then(() => document.fonts.ready).then(() => { measure(); drawFace(0); }, () => {});

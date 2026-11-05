@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects, cellInZones, fieldMask } = require("../public/portrait-3d.js");
+const { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects, cellInZones, fieldMask, coverBounds, quantise, turnKey, bubbleCount } = require("../public/portrait-3d.js");
 
 // A 3 x 2 depth grid, one sample every 2 portrait grid points.
 const depth = { w: 3, h: 2, scale: 2, data: Uint8Array.from([0, 51, 255, 102, 153, 204]) };
@@ -223,4 +223,61 @@ test("fieldMask cuts off face indices past the right edge", () => {
 test("fieldMask cuts off face indices past the bottom edge", () => {
   // (0, 30) is face row 3 of 3: unchecked, its index 15 would read the covered cell past the bottom
   assert.equal(fmask[3 * 5 + 0], 0);
+});
+
+// A 6 x 5 cover mask with the cells (2, 1) and (3, 2) set.
+const coverOf = (cols, rows, cells) => { const m = new Uint8Array(cols * rows); for (const [x, y] of cells) m[y * cols + x] = 1; return m; };
+
+test("coverBounds is the box of the set cells, end exclusive, with no margin", () => {
+  assert.deepEqual(coverBounds(coverOf(6, 5, [[2, 1], [3, 2]]), 6, 5, 0), { x0: 2, x1: 4, y0: 1, y1: 3 });
+});
+
+test("coverBounds grows the box by the margin on every side", () => {
+  assert.deepEqual(coverBounds(coverOf(10, 10, [[4, 4], [5, 6]]), 10, 10, 2), { x0: 2, x1: 8, y0: 2, y1: 9 });
+});
+
+test("coverBounds clips the grown box to the grid", () => {
+  assert.deepEqual(coverBounds(coverOf(6, 5, [[0, 0], [5, 4]]), 6, 5, 2), { x0: 0, x1: 6, y0: 0, y1: 5 });
+});
+
+test("coverBounds of an all-zero mask is an empty box", () => {
+  const b = coverBounds(new Uint8Array(30), 6, 5, 2);
+  assert.equal(b.x0, b.x1);
+});
+
+test("quantise rounds to the nearest multiple of the step", () => {
+  assert.ok(near(quantise(.123, .05), .1));
+  assert.ok(near(quantise(.126, .05), .15));
+  assert.ok(near(quantise(-.126, .05), -.15));
+  assert.equal(quantise(0, .05), 0);
+});
+
+test("turnKey maps values within the same step to the same key", () => {
+  const a = .005, l = .01;
+  assert.equal(turnKey(.1001, -.05, .3, -.45, a, l), turnKey(.1009, -.0502, .3021, -.4479, a, l));
+});
+
+test("turnKey maps a turn or light a step apart to different keys", () => {
+  const a = .005, l = .01, k = turnKey(.1, -.05, .3, -.45, a, l);
+  assert.notEqual(turnKey(.105, -.05, .3, -.45, a, l), k);
+  assert.notEqual(turnKey(.1, -.055, .3, -.45, a, l), k);
+  assert.notEqual(turnKey(.1, -.05, .31, -.45, a, l), k);
+  assert.notEqual(turnKey(.1, -.05, .3, -.44, a, l), k);
+});
+
+test("bubbleCount is a quarter of the page height, at most 900, on a wide screen", () => {
+  assert.equal(bubbleCount(2000, 1280), 500);
+  assert.equal(bubbleCount(8000, 1280), 900);
+  assert.equal(bubbleCount(8000, 1280, 8), 900);
+});
+
+test("bubbleCount takes 60% under 860px wide", () => {
+  assert.equal(bubbleCount(8000, 859), 540);
+  assert.equal(bubbleCount(8000, 860), 900);
+});
+
+test("bubbleCount takes 60% again on 4 cores or fewer", () => {
+  assert.equal(bubbleCount(8000, 1280, 4), 540);
+  assert.equal(bubbleCount(8000, 412, 2), 324);
+  assert.equal(bubbleCount(8000, 412, 5), 540);
 });
