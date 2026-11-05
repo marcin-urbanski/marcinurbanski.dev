@@ -36,7 +36,8 @@
   }
 
   // Links and the email ([data-scramble]) scramble on hover; an H2's [data-scramble-part] lines do too, 700ms
-  // each, 90ms apart. Label <h2>s carry neither attribute and stay still. Hover effects are desktop only.
+  // each, 90ms apart. The section labels ("(01) — about") carry neither attribute and stay still. Hover effects
+  // are desktop only.
   function setupScramble() {
     const hover = matchMedia("(hover: hover)");
     document.querySelectorAll("[data-scramble]").forEach(node => {
@@ -63,18 +64,24 @@
     setTimeout(() => scramble(hi, text, 1000), 350);
   }
 
-  // The header clock: Europe/London HH:MM:SS, every second.
+  // The header clock: Europe/London HH:MM:SS, every second. It stops while the tab is hidden and shows the time at
+  // once when the tab is shown again.
   function setupClock() {
     const clock = document.querySelector("[data-clock]");
     if (!clock) return;
+    let timer = 0;
     const tick = () => { clock.textContent = core.londonTime(new Date()); };
-    tick();
-    setInterval(tick, 1000);
+    const start = () => { tick(); timer = setInterval(tick, 1000); };
+    document.addEventListener("visibilitychange", () => {
+      clearInterval(timer);
+      if (!document.hidden) start();
+    });
+    start();
   }
 
   // README "Custom cursor": a 10px accent square that follows the pointer at .25 and grows to a 56px circle
-  // outline (.is-hot) at .2 over links and buttons. Not created on (hover: none). Without motion it snaps.
-  // It runs in the loop only until it has caught up with the pointer.
+  // outline (.is-hot) at .2 over links and buttons. Not created on (hover: none). It runs in the loop only until
+  // it has caught up with the pointer. Without motion it snaps from the pointer's own events, with no frame.
   function setupCursor() {
     if (matchMedia("(hover: none)").matches) return;
     const cursor = el("div", "hp-cursor");
@@ -94,17 +101,18 @@
       cursor.style.width = cursor.style.height = cur.s + "px";
       cursor.style.transform = "translate3d(" + (cur.x - cur.s / 2) + "px," + (cur.y - cur.s / 2) + "px,0)";
     };
+    const follow = () => { if (motion()) loop.add(step); else step(1); };
     window.addEventListener("pointermove", e => {
       if (e.pointerType === "touch") return;
       target.x = e.clientX;
       target.y = e.clientY;
-      loop.add(step);
+      follow();
     }, { passive: true });
     document.addEventListener("mouseover", e => {
       const hot = !!e.target.closest("a, button");
       cursor.classList.toggle("is-hot", hot);
       target.s = hot ? 56 : 10;
-      if (cur) loop.add(step);
+      if (cur) follow();
     });
     // Off the window: hide it at once and snap back on the way in.
     root.addEventListener("mouseleave", () => {
@@ -126,13 +134,26 @@
 
   // README section 3: the approach text lights in reading order as it scrolls through the viewport. styles.css
   // draws the gradient from --ink to --ascii-dim around --lit under .is-lit; this sets --lit while it is on screen.
+  // The text's place in the document is measured at the start, on resize and once the fonts have loaded, so its
+  // frame reads no layout: the scroll position comes from a passive scroll listener (spec AC 5).
   function setupLitText() {
     document.querySelectorAll("[data-words]").forEach(node => {
-      let last = null;
+      let top = 0, height = 0, vh = 0, scrollTop = 0, last = null;
+      const measure = () => {
+        scrollTop = window.scrollY;
+        vh = window.innerHeight;
+        const r = node.getBoundingClientRect();
+        top = r.top + scrollTop;
+        height = r.height;
+      };
       const step = () => {
-        const r = node.getBoundingClientRect(), pct = core.litPercent(r.top, r.height, window.innerHeight);
+        const pct = core.litPercent(top - scrollTop, height, vh);
         if (pct !== last) node.style.setProperty("--lit", (last = pct) + "%");
       };
+      window.addEventListener("scroll", () => { scrollTop = window.scrollY; }, { passive: true });
+      window.addEventListener("resize", measure);
+      if (document.fonts) document.fonts.ready.then(measure);
+      measure();
       step();
       node.classList.add("is-lit");
       window.SiteLoop.whileVisible(node, step);
@@ -222,9 +243,14 @@
 
   // README section 5 "Hover preview panel": over a [data-preview] row a 320px panel, cloned from
   // <template id="preview-{name}">, follows the pointer (+28px, kept in the viewport) at .14 and leans into the
-  // distance still to go; it fades in and out (styles.css). Desktop only. Without motion it snaps, unrotated.
+  // distance still to go; it fades in and out (styles.css). Desktop only. Without motion it snaps, unrotated, from
+  // the pointer's own events with no frame. The viewport is measured on resize, so the frame reads no layout.
   function setupPreview() {
     if (!matchMedia("(hover: hover)").matches) return;
+    const viewport = { w: 0, h: 0 };
+    const measure = () => { viewport.w = window.innerWidth; viewport.h = window.innerHeight; };
+    window.addEventListener("resize", measure);
+    measure();
     document.querySelectorAll("[data-preview]").forEach(row => {
       const tpl = document.getElementById("preview-" + row.dataset.preview);
       if (!tpl) return;
@@ -236,7 +262,7 @@
       const pointer = { x: 0, y: 0 };
       let cur = null;
       const step = dt => {
-        cur = core.previewPos(pointer, motion() ? cur : null, { w: window.innerWidth, h: window.innerHeight }, dt);
+        cur = core.previewPos(pointer, motion() ? cur : null, viewport, dt);
         panel.style.transform = "translate3d(" + cur.x + "px," + cur.y + "px,0) rotate(" + cur.rot + "deg)";
       };
       const track = e => { pointer.x = e.clientX; pointer.y = e.clientY; };
@@ -245,9 +271,12 @@
         cur = null;
         step(1);
         panel.style.opacity = "1";
-        loop.add(step);
+        if (motion()) loop.add(step);
       });
-      row.addEventListener("mousemove", track);
+      row.addEventListener("mousemove", e => {
+        track(e);
+        if (!motion()) step(1);
+      });
       row.addEventListener("mouseleave", () => {
         loop.remove(step);
         panel.style.opacity = "0";
@@ -321,13 +350,14 @@
       }
     };
     window.SiteEffects = { scramble };
-    setupClock();
-    setupCursor();
-    setupPreview();
+    // The rest decorates what is already on screen, so it waits until the page has painted (spec AC 2).
+    core.afterPaint(setupClock, window);
+    core.afterPaint(setupCursor, window);
+    core.afterPaint(setupPreview, window);
+    if (motion()) core.afterPaint(setupScramble, window);
     // Without motion nothing plays, but the runs grids still need their results drawn in, full at once.
     if (!motion()) setupRuns();
     if (motion()) {
-      setupScramble();
       setupLitText();
       setupStrip();
       // The reveals, count-up and runs grids play once, so with the loader they wait for it to close (spec

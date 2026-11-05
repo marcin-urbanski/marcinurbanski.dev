@@ -452,3 +452,71 @@ test("the meta and og descriptions repeat the hero headline and subline", () => 
   assert.ok(html.includes(`<meta name="description" content="${hero}">`), "meta description");
   assert.ok(html.includes(`<meta property="og:description" content="${hero}">`), "og:description");
 });
+
+// Spec AC 7: no script holds up the parser; the head preloader is the one inline script (JSON-LD aside).
+test("every script with a src is deferred and the only other script is the home page's head preloader", () => {
+  const { htmlFiles } = require("../tools/asset-versions.js");
+  const root = path.join(__dirname, "../public");
+  for (const page of htmlFiles(root)) {
+    const name = path.relative(root, page), inline = [];
+    for (const [, attrs, body] of fs.readFileSync(page, "utf8").matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+      if (/\ssrc=/.test(attrs)) assert.match(attrs, /\sdefer\b/, name + ": <script" + attrs + ">");
+      else if (!/type="application\/ld\+json"/.test(attrs)) inline.push(body);
+    }
+    assert.deepEqual(inline, name === "index.html" ? [headScript] : [], name);
+  }
+});
+
+const effectsJs = fs.readFileSync(path.join(__dirname, "../public/effects.js"), "utf8");
+// The source of one top-level effects.js setup function, from its declaration to the closing brace at its indent.
+const effectsFn = name => {
+  const m = effectsJs.match(new RegExp("\\n( *)function " + name + "\\([\\s\\S]*?\\n\\1\\}"));
+  assert.ok(m, "function " + name);
+  return m[0];
+};
+
+// Spec AC 2: the loader, intro and one-shots keep their timing; the rest waits until the page has painted.
+test("effects.js sets up the clock, cursor, preview panel and hover scramble after the first paint", () => {
+  const setup = effectsJs.slice(effectsJs.indexOf("window.SiteEffects = { scramble };"), effectsJs.indexOf('root.dataset.fx = "on"'));
+  for (const fn of ["setupClock", "setupCursor", "setupPreview", "setupScramble"]) {
+    assert.doesNotMatch(setup, new RegExp(fn + "\\(\\)"), fn + " called directly");
+    assert.match(setup, new RegExp("core\\.afterPaint\\([^\\n]*\\b" + fn + "\\b"), fn);
+  }
+  assert.match(effectsJs, /\n    root\.dataset\.fx = "on";/);
+});
+
+// Spec AC 3: the clock stops while the tab is hidden and catches up at once when it returns.
+test("the header clock stops while the tab is hidden and ticks at once when it is shown again", () => {
+  const clock = effectsFn("setupClock");
+  assert.match(clock, /document\.addEventListener\("visibilitychange"/);
+  assert.match(clock, /clearInterval\(/);
+  assert.match(clock, /document\.hidden/);
+});
+
+// Spec AC 6 (as amended): under reduced motion the cursor and the panel follow the pointer from its own events.
+test("without motion the cursor and the preview panel never run in the frame loop", () => {
+  for (const name of ["setupCursor", "setupPreview"]) {
+    const adds = effectsFn(name).split("\n").filter(line => line.includes("loop.add("));
+    assert.ok(adds.length, name);
+    for (const line of adds) assert.match(line, /if \(motion\(\)\) loop\.add\(/, name + ": " + line.trim());
+  }
+});
+
+// Spec AC 5: every frame callback in effects.js (each `const step`, and the strip's) takes sizes and the scroll
+// position from variables kept by listeners, never from layout.
+test("effects.js frame callbacks read no layout (spec AC 5)", () => {
+  const frames = [...effectsJs.matchAll(/\n( *)const step = [^\n]*=> \{[\s\S]*?\n\1\};/g)].map(m => m[0]);
+  const strip = effectsFn("setupStrip");
+  frames.push(strip.slice(strip.indexOf("window.SiteLoop.whileVisible(")));
+  assert.ok(frames.length >= 6, frames.length + " frame callbacks");
+  for (const body of frames) {
+    assert.doesNotMatch(body, /getBoundingClientRect|getClientRects|scroll[XY]\b|inner(Width|Height)|client(Width|Height)|scroll(Height|Width)/, body);
+  }
+});
+
+test("the lit text measures its place on start, on resize and once the fonts have loaded", () => {
+  const lit = effectsFn("setupLitText");
+  assert.match(lit, /window\.addEventListener\("scroll", [^\n]*\{ passive: true \}\)/);
+  assert.match(lit, /window\.addEventListener\("resize", measure\)/);
+  assert.match(lit, /document\.fonts\.ready\.then\(measure\)/);
+});
