@@ -135,9 +135,13 @@ html:has(> body.home-page) { scroll-behavior: smooth; }
 .home-page .hp-mask { display: block; overflow: hidden; }
 .home-page .hp-mask-1 { padding-bottom: .04em; }
 .home-page .hp-mask-2 { padding-bottom: .06em; }
-.home-page .hp-mask-sub { margin-top: clamp(20px, 2.6vw, 40px); }
-.home-page .hp-h1-line { display: block; font-size: clamp(52px, 9.6vw, 176px); line-height: .9; letter-spacing: -.05em; }
+.home-page .hp-mask-sub { margin: clamp(20px, 2.6vw, 40px) 0 0; }
+.home-page .hp-h1-line { display: block; font-size: clamp(52px, 7.6vw, 176px); line-height: .9; letter-spacing: -.05em; }
 .home-page .hp-h1-sub { display: block; max-width: 24em; font-size: clamp(22px, 2.5vw, 40px); line-height: 1.18; letter-spacing: -.02em; text-wrap: pretty; }
+/* Desktop: the face box starts at 54% of the width or further right (portraitLayout), so the sentence stops 3vw before it */
+@media (min-width: 760px) {
+  .home-page .hp-h1-sub { max-width: min(24em, calc(51vw - var(--home-gutter-l))); }
+}
 .home-page .hp-hero-meta { position: relative; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; margin-top: clamp(40px, 8vh, 96px); padding-top: 16px; border-top: 1px solid var(--line); font: 400 13px/normal var(--mono); color: var(--muted-2); }
 
 /* 3 Approach: fully lit by default; the script adds the dim start */
@@ -185,7 +189,7 @@ html.motion .home-page [data-words].is-lit {
 .home-page .hp-project-desc { flex: 1 1 300px; max-width: 30em; font-size: 17px; line-height: 1.5; opacity: .74; text-wrap: pretty; }
 .home-page .hp-post { gap: 12px 32px; padding-block: clamp(26px, 3vw, 40px); }
 .home-page .hp-post time { flex-basis: 120px; }
-.home-page .hp-post-title { flex: 1 1 420px; font-size: clamp(24px, 2.6vw, 40px); line-height: 1.12; letter-spacing: -.025em; text-wrap: pretty; }
+.home-page .hp-post-title { flex: 1 1 420px; margin: 0; font-weight: 400; font-size: clamp(24px, 2.6vw, 40px); line-height: 1.12; letter-spacing: -.025em; text-wrap: pretty; }
 
 /* 6 Writing */
 .home-page .hp-writing { padding: clamp(80px, 12vh, 160px) var(--home-gutter-r) clamp(80px, 12vh, 160px) var(--home-gutter-l); }
@@ -225,6 +229,8 @@ html.motion .home-page [data-words].is-lit {
 .home-page .hp-pv { position: fixed; left: 0; top: 0; z-index: 60; width: 320px; padding: 14px; pointer-events: none; background: var(--surface); border: 1px solid var(--line-2); font: 400 12px/normal var(--mono); color: var(--muted-1); transition: opacity .35s ease; }
 .home-page .hp-pv-head { display: flex; justify-content: space-between; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line-2); }
 .home-page .hp-pv-term { margin: 0; font: inherit; line-height: 1.7; color: var(--ink); }
+.home-page .hp-pv-shot { display: block; width: 100%; height: auto; }
+.home-page .hp-pv-foot { display: flex; justify-content: space-between; margin-top: 12px; }
 
 /* Motion start states: only under the classes the <head> script adds, so the page shows without effects.js.
    html.intro covers the page until the loader exists; effects.js adds .hero-in to <html> and .is-in to [data-io]. */
