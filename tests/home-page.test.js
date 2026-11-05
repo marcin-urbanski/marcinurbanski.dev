@@ -30,7 +30,7 @@ test("the hero keeps the hooks portrait.js looks up", () => {
 });
 
 test("each hero headline line has data-line", () => {
-  const lines = [...html.matchAll(/<span [^>]*data-line[^>]*>([\s\S]*?)<\/span>\s*<\/span>/g)].map(m => text(m[1]).trim());
+  const lines = [...html.matchAll(/<span [^>]*data-line[^>]*>([\s\S]*?)<\/span>\s*<\/(?:span|p)>/g)].map(m => text(m[1]).trim());
   assert.deepEqual(lines, [
     "Designer turned",
     "developer.",
@@ -92,13 +92,38 @@ test("the runs grids show their final state and are hidden from assistive tech",
   assert.ok(bodyText.includes("3 models × 4 setups × 3 requests × 30 runs"));
 });
 
-test("the claude-skills preview is an inert template and TimeRabbit has none", () => {
+test("the claude-skills preview is an inert template", () => {
   const tpl = html.match(/<template id="preview-skills">([\s\S]*?)<\/template>/);
   assert.ok(tpl, "template#preview-skills");
   assert.match(tpl[1], /~\/claude-skills/);
   assert.match(tpl[1], /\$ ls\ntest-first\/ +verification\/\nspecs\/ +review\//);
+});
+
+test("both project rows have a hover preview, TimeRabbit's an app screenshot that exists", () => {
   const rows = tag(/<a [^>]*>/g).filter(t => /data-preview/.test(t));
-  assert.deepEqual(rows.map(t => t.match(/href="([^"]+)"/)[1]), ["https://github.com/marcin-urbanski/claude-skills"]);
+  assert.deepEqual(rows.map(t => [t.match(/href="([^"]+)"/)[1], t.match(/data-preview="([^"]+)"/)[1]]), [
+    ["https://github.com/marcin-urbanski/claude-skills", "skills"],
+    ["https://gettimerabbit.com", "timerabbit"]
+  ]);
+  const tpl = html.match(/<template id="preview-timerabbit">([\s\S]*?)<\/template>/);
+  assert.ok(tpl, "template#preview-timerabbit");
+  const img = tpl[1].match(/<img [^>]*>/);
+  assert.ok(img, "an img in the TimeRabbit preview");
+  assert.match(img[0], /alt=""/);
+  assert.match(img[0], /width="\d+" height="\d+"/);
+  const src = img[0].match(/src="\/([^"]+)"/)[1];
+  assert.ok(fs.existsSync(path.join(__dirname, "../public", src)), src + " is in public/");
+});
+
+test("the hero h1 holds only the headline; the line under it is a paragraph", () => {
+  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+  assert.equal(text(h1[1]).trim(), "Designer turned developer.");
+  assert.match(html, /<\/h1>\s*<p class="hp-mask hp-mask-sub"><span class="hp-h1-sub" data-line>I build my own apps/);
+});
+
+test("the writing row's post title is a heading and the study date is a time element", () => {
+  assert.match(html, /<h3 class="hp-post-title">What happens when you tell a coding agent to skip the tests\?<\/h3>/);
+  assert.match(html, /<time datetime="2026-11-03">study · 2026-11-03<\/time>|<span>study · <time datetime="2026-11-03">2026-11-03<\/time><\/span>/);
 });
 
 test("the copy button keeps its id and has no live region yet", () => {
