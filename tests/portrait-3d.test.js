@@ -225,7 +225,7 @@ test("fieldMask cuts off face indices past the bottom edge", () => {
   assert.equal(fmask[3 * 5 + 0], 0);
 });
 
-// A 6 x 5 cover mask with the cells (2, 1) and (3, 2) set.
+// A cols x rows cover mask with the given [x, y] cells set.
 const coverOf = (cols, rows, cells) => { const m = new Uint8Array(cols * rows); for (const [x, y] of cells) m[y * cols + x] = 1; return m; };
 
 test("coverBounds is the box of the set cells, end exclusive, with no margin", () => {

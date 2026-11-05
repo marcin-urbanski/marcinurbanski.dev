@@ -308,6 +308,9 @@
     window.SiteLoop = {
       add: loop.add,
       remove: loop.remove,
+      // Read callbacks run before the others in each frame, so their layout reads never follow a style write.
+      addRead: loop.addRead,
+      removeRead: loop.removeRead,
       // Runs `fn` in the loop only while `node` is on screen; the returned function stops it for good.
       whileVisible(node, fn) {
         const io = new IntersectionObserver(entries => {

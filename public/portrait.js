@@ -13,7 +13,7 @@
   const INK = rootStyle.getPropertyValue("--ink").trim(), MONO = rootStyle.getPropertyValue("--mono").trim();
   const MID = rootStyle.getPropertyValue("--ascii-mid").trim(), DIM = rootStyle.getPropertyValue("--ascii-dim").trim();
   const hero = document.querySelector(".hero");
-  const face = document.getElementById("face"), fctx = face.getContext("2d");
+  const face = document.getElementById("face"), fctx = face.getContext("2d"), heroText = document.querySelector(".hp-hero-text");
   // README "ASCII portrait", readability: face cells under a headline line, padded 12 x 10px, draw dimmer.
   // A Range gives one box per rendered text line; the element's own box would be a full-width block.
   const lineEls = document.querySelectorAll("[data-line]"), range = document.createRange(), zones = [];
@@ -54,7 +54,9 @@
     }
   }
 
-  function update3d(now, dt) {
+  // build: false while the loader covers the page; the turn and the light keep easing, so the face is mid-sway
+  // when it lifts, but base is rebuilt only on the first frame after.
+  function update3d(now, dt, build) {
     let ty, tp, tlx, tly;
     if (pointer && now - movedAt < 2.5) {
       const fx = OX + GW * S / 2, fy = heroTop - scrollTop + OY + GH * S / 2;   // face centre on screen
@@ -64,6 +66,7 @@
       ty = Math.sin(now * .45) * YAW * .7; tp = Math.sin(now * .31 + 1) * PITCH * .5; tlx = -.35; tly = -.45;
     }
     yaw = ease(yaw, ty, dt); pitch = ease(pitch, tp, dt); lx = ease(lx, tlx, dt); ly = ease(ly, tly, dt);
+    if (!build) return;
     const key = turnKey(yaw, pitch, lx, ly, ANGLE_STEP, LIGHT_STEP);
     if (key === built) return;
     built = key;
@@ -77,7 +80,26 @@
   const desired = () => Math.round(steadyMax * Math.max(.08, Math.min(1, (1 - fillFrac) / .35)));
   function updateFill() { let f = 0; for (const k of targets) f += filled[k]; fillFrac = f / targets.length; }
 
-  function measure() {
+  // The measure as steps: the sizes, one computeBase pass per turn, the front view, then the rest. The first measure
+  // runs each step in an idle callback of its own, so none is a long task; later ones run all steps at once.
+  function measureSteps() {
+    let reach, grid;
+    const turns = still ? [] : [[YAW, 0], [-YAW, 0], [0, PITCH], [0, -PITCH], [YAW, PITCH], [YAW, -PITCH], [-YAW, PITCH], [-YAW, -PITCH]];
+    return [
+      () => { measureSizes(); reach = new Float32Array(cols * rows); grid = { x0: 0, x1: cols, y0: 0, y1: rows }; },
+      // Every cell the face covers at its widest turns is a target, so turning almost never clips it; the few
+      // dim cells an in-between turn uncovers sit next to a target and fill when it settles.
+      ...turns.map(([yw, pt]) => () => {
+        computeBase(yw, pt, FRONT, grid);
+        for (let k = 0; k < base.length; k++) reach[k] = Math.max(reach[k], base[k]);
+      }),
+      () => { computeBase(0, 0, FRONT, grid); built = ""; },
+      () => measureCover(reach)
+    ];
+  }
+  function measure() { for (const s of measureSteps()) s(); }
+
+  function measureSizes() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     VW = window.innerWidth; VH = window.innerHeight;
     docH = document.documentElement.scrollHeight;
@@ -97,14 +119,9 @@
     base = new Float32Array(cols * rows); glow = new Float32Array(cols * rows);
     jitter = new Int8Array(cols * rows); filled = new Uint8Array(cols * rows);
     targets = [];
-    // Every cell the face covers at its widest turns is a target, so turning almost never clips it; the few
-    // dim cells an in-between turn uncovers sit next to a target and fill when it settles.
-    const reach = new Float32Array(cols * rows), grid = { x0: 0, x1: cols, y0: 0, y1: rows };
-    if (!still) for (const [yw, pt] of [[YAW, 0], [-YAW, 0], [0, PITCH], [0, -PITCH], [YAW, PITCH], [YAW, -PITCH], [-YAW, PITCH], [-YAW, -PITCH]]) {
-      computeBase(yw, pt, FRONT, grid);
-      for (let k = 0; k < base.length; k++) reach[k] = Math.max(reach[k], base[k]);
-    }
-    computeBase(0, 0, FRONT, grid); built = "";
+  }
+
+  function measureCover(reach) {
     const cover = new Uint8Array(cols * rows);           // cells the face can light at any turn
     for (let y = 0; y < rows; y++) for (let x = c0; x < cols; x++) {
       const fade = faceFade((y + .5) * ch, OY + PH, PH), k = y * cols + x;
@@ -122,6 +139,34 @@
     // A ghost of the face is there from the first frame; the bubbles bring the rest.
     for (const k of targets) if (still || Math.random() < .4) filled[k] = 1;
     spawnAll();
+    measureZones();
+    followReveal();
+  }
+
+  // README "ASCII portrait", readability: the headline line boxes, relative to the face. Read on every measure
+  // and, while the hero reveal slides the lines in, in the loop's read phase, never while drawing.
+  function measureZones() {
+    const box = face.getBoundingClientRect();
+    zones.length = 0;
+    for (const el of lineEls) {
+      range.selectNodeContents(el);
+      for (const z of range.getClientRects()) zones.push({ left: z.left - box.left, top: z.top - box.top, right: z.right - box.left, bottom: z.bottom - box.top });
+    }
+  }
+  // If the lines are moving, measure them each frame until every one of their animations has finished, then once
+  // more. A newer reveal replaces the older wait.
+  let revealWait = null;
+  function followReveal() {
+    const anims = [...lineEls].flatMap(el => el.getAnimations());
+    if (!anims.length || !window.SiteLoop) return;
+    const wait = revealWait = {};
+    window.SiteLoop.addRead(measureZones);
+    Promise.allSettled(anims.map(a => a.finished)).then(() => {
+      if (revealWait !== wait) return;
+      revealWait = null;
+      window.SiteLoop.removeRead(measureZones);
+      measureZones();
+    });
   }
 
   function spawnAll() {
@@ -164,31 +209,25 @@
     return RAMP[Math.max(1, Math.min(RAMP.length - 1, i))];
   };
 
+  // Under reduced motion the face is drawn once, so every row is drawn, not only those on screen.
   function drawFace(t, dt = 1) {
-    const top = heroTop - scrollTop;
-    if (top + FH < 0) return;                              // hero scrolled out of view
-    if (!still) update3d(t, dt);
+    const top = heroTop - scrollTop, offScreen = (y0, y1) => !still && (top + y1 < 0 || top + y0 > VH);
+    if (offScreen(0, FH)) return;                          // hero scrolled out of view
+    if (!still) update3d(t, dt, true);
     fctx.clearRect(0, 0, FW, FH);
     fctx.textBaseline = "top";
 
     fctx.font = ffs + "px " + MONO; fctx.fillStyle = DIM;
     for (let r = 0; r < frows; r++) {
-      if (top + (r + 1) * fch < 0 || top + r * fch > VH) continue;
+      if (offScreen(r * fch, (r + 1) * fch)) continue;
       for (let c = 0, k = r * fcols; c < fcols; c++, k++) frow[c] = fmask[k] ? " " : fieldChar(c, r, t) || " ";
       fctx.fillText(frow.join(""), 0, r * fch);
-    }
-
-    const box = face.getBoundingClientRect();
-    zones.length = 0;
-    for (const el of lineEls) {
-      range.selectNodeContents(el);
-      for (const z of range.getClientRects()) zones.push({ left: z.left - box.left, top: z.top - box.top, right: z.right - box.left, bottom: z.bottom - box.top });
     }
 
     // Each face row is drawn as runs of one colour, split where a cell moves in or out of a headline line.
     fctx.font = fs + "px " + MONO;
     for (let y = 0; y < rows; y++) {
-      if (top + (y + 1) * ch < 0 || top + y * ch > VH) continue;
+      if (offScreen(y * ch, (y + 1) * ch)) continue;
       let run = "", runX = c0, colour = null;
       for (let x = c0; x < cols; x++) {
         const k = y * cols + x;
@@ -264,10 +303,12 @@
 
   window.addEventListener("pointermove", e => { pointer = { x: e.clientX, y: e.clientY }; if (e.pointerType !== "touch") movedAt = performance.now() / 1000; }, { passive: true });
   document.addEventListener("pointerleave", () => { pointer = null; });
-  let rt;
+  // Until the first measure has run there is nothing to resize or re-measure; one asked for meanwhile runs it again.
+  let ready = false, stale = false, rt;
   window.addEventListener("resize", () => {
     clearTimeout(rt);
     rt = setTimeout(() => {
+      if (!ready) { stale = true; return; }
       // A phone toolbar showing or hiding changes only the height: resize the bubble layer, keep the face as it is.
       if (window.innerWidth === VW && face.clientHeight === FH) {
         VH = window.innerHeight; docH = document.documentElement.scrollHeight;
@@ -279,17 +320,42 @@
   });
   // Frames read the scroll position from here, not from the layout.
   window.addEventListener("scroll", () => { scrollTop = window.scrollY; }, { passive: true });
-  if (still) window.addEventListener("scroll", () => drawFace(0), { passive: true });
+  // The hero reveal (effects.js intro) may start before or after the first measure.
+  heroText.addEventListener("transitionrun", followReveal);
 
-  measure(); drawFace(0);
   // The page loop's dt is in 60fps frames; step() takes seconds. The bubbles run across the page, the face
   // draws only while the hero is on screen. While the intro loader covers the page (<html class="intro">)
-  // neither canvas is drawn; the check stays here, so the one-time draws above still happen.
+  // neither canvas is drawn; the check stays here, so the one-time draw after the first measure still happens.
   const covered = () => document.documentElement.classList.contains("intro");
-  if (!still) {
+  function run() {
+    drawFace(0);
+    if (still) return;
     window.SiteLoop.add((dt, now) => step(now / 1000, dt / 60, !covered()));
-    window.SiteLoop.whileVisible(face, (dt, now) => { if (!covered()) drawFace(now / 1000, dt); });
+    window.SiteLoop.whileVisible(face, (dt, now) => {
+      if (covered()) update3d(now / 1000, dt, false); else drawFace(now / 1000, dt);
+    });
   }
-  // Re-measure once Geist Mono is in: the cell width comes from the font.
-  document.fonts.load("7px " + MONO).then(() => document.fonts.ready).then(() => { measure(); drawFace(0); }, () => {});
+
+  // Spec AC 2: the face starts after the first paint, its first measure spread over idle callbacks, one step each.
+  const core = window.EffectsCore;
+  const afterPaint = fn => core ? core.afterPaint(fn, window) : setTimeout(fn, 0);
+  const whenIdle = fn => core ? core.whenIdle(fn, window) : setTimeout(fn, 0);
+  function firstMeasure(next) {
+    stale = false;
+    const steps = measureSteps();
+    const doStep = () => {
+      steps.shift()();
+      if (stale) return firstMeasure(whenIdle);
+      if (steps.length) return whenIdle(doStep);
+      ready = true;
+      run();
+    };
+    next(doStep);
+  }
+  firstMeasure(afterPaint);
+  // Re-measure once Geist Mono is in: the cell width comes from the font. During the first measure that matters
+  // only once its first step has read the cell width (cw).
+  document.fonts.load("7px " + MONO).then(() => document.fonts.ready).then(() => {
+    if (ready) { measure(); drawFace(0); } else if (cw) stale = true;
+  }, () => {});
 })();

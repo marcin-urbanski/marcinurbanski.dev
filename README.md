@@ -4,7 +4,8 @@ Personal site and writing of Marcin Urbanski. Plain HTML, CSS and JS in `public/
 
 - `public/index.html`: home page. Its styles are in `public/styles.css`, shared with the posts and the 404 page.
 - `public/effects-core.js`: the maths behind the home page effects (loader, scramble, clock, count-up, runs grids,
-  strip, cursor, preview panel) and the page's frame loop, with no DOM.
+  strip, cursor, preview panel), the page's frame loop (layout reads go in its read phase, run first in each frame)
+  and the after-paint and idle schedulers the portrait starts from, with no DOM.
 - `public/effects.js`: the home page effects themselves, run from one `requestAnimationFrame` loop. The intro
   loader shows once per tab (`sessionStorage` key `loader-seen`). Under reduced motion every effect shows its
   final state.

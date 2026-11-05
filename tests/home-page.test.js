@@ -372,6 +372,44 @@ test("the portrait draws in the --mono font (Geist Mono) and runs in the page lo
   assert.match(js, /SiteLoop\.whileVisible\(face,/);
 });
 
+// The source of one top-level portrait.js function, from its declaration to the closing brace at its indent.
+const portraitFn = (js, name) => {
+  const m = js.match(new RegExp("\\n( *)function " + name + "\\([\\s\\S]*?\\n\\1\\}"));
+  assert.ok(m, "function " + name);
+  return m[0];
+};
+
+test("the portrait's frame functions read no layout (spec AC 5)", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  for (const name of ["drawFace", "step", "update3d"]) {
+    assert.doesNotMatch(portraitFn(js, name), /getBoundingClientRect|getClientRects|scroll[XY]\b|inner(Width|Height)|client(Width|Height)|scrollHeight/, name);
+  }
+});
+
+test("the portrait measures the headline lines in the loop's read phase while the reveal runs", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  assert.match(js, /SiteLoop\.addRead\(/);
+  assert.match(js, /SiteLoop\.removeRead\(/);
+  assert.match(js, /"transitionrun"/);
+});
+
+test("the portrait starts after the first paint", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  assert.match(js, /const core = window\.EffectsCore;/);
+  assert.match(js, /core\.afterPaint\(fn, window\)/);
+});
+
+test("under reduced motion the face is drawn once, not again on every scroll", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  assert.doesNotMatch(js, /if \(still\) window\.addEventListener\("scroll"/);
+});
+
+test("window.SiteLoop exposes the loop's read phase", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/effects.js"), "utf8");
+  assert.match(js, /addRead: loop\.addRead,/);
+  assert.match(js, /removeRead: loop\.removeRead,/);
+});
+
 test("on desktop the hero sentence stops before the face, which starts at 54% of the width", () => {
   const block = css.match(/@media \(min-width: 760px\) \{([^@]*?)\n\}/);
   assert.ok(block, "a min-width: 760px block");
