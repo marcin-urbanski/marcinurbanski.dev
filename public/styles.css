@@ -226,6 +226,7 @@ html.motion .home-page [data-words].is-lit {
 .home-page .hp-pv-head { display: flex; justify-content: space-between; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line-2); }
 .home-page .hp-pv-term { margin: 0; font: inherit; line-height: 1.7; color: var(--ink); }
 .home-page .hp-pv-shot { display: block; width: 100%; height: auto; }
+.home-page .hp-pv-foot { display: flex; justify-content: space-between; margin-top: 12px; }
 
 /* Motion start states: only under the classes the <head> script adds, so the page shows without effects.js.
    html.intro covers the page until the loader exists; effects.js adds .hero-in to <html> and .is-in to [data-io]. */

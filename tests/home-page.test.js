@@ -111,6 +111,7 @@ test("both project rows have a hover preview, TimeRabbit's an app screenshot tha
   assert.ok(img, "an img in the TimeRabbit preview");
   assert.match(img[0], /alt=""/);
   assert.match(img[0], /width="\d+" height="\d+"/);
+  assert.match(tpl[1], /<img [^>]*>\s*<div class="hp-pv-foot"><span>gettimerabbit\.com<\/span><span>macOS<\/span><\/div>/, "the handoff's caption row under the screenshot");
   const src = img[0].match(/src="\/([^"]+)"/)[1];
   assert.ok(fs.existsSync(path.join(__dirname, "../public", src)), src + " is in public/");
 });
@@ -123,7 +124,7 @@ test("the hero h1 holds only the headline; the line under it is a paragraph", ()
 
 test("the writing row's post title is a heading and the study date is a time element", () => {
   assert.match(html, /<h3 class="hp-post-title">What happens when you tell a coding agent to skip the tests\?<\/h3>/);
-  assert.match(html, /<time datetime="2026-11-03">study · 2026-11-03<\/time>|<span>study · <time datetime="2026-11-03">2026-11-03<\/time><\/span>/);
+  assert.match(html, /<span>study · <time datetime="2026-11-03">2026-11-03<\/time><\/span>/);
 });
 
 test("the copy button keeps its id and has no live region yet", () => {
