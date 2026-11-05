@@ -137,21 +137,18 @@
     };
   }
 
-  // Runs `fn` once the page has painted and the browser is idle: after the next frame, from requestIdleCallback
-  // (at most 1s later; `fn` gets its deadline), or 200ms after that frame where requestIdleCallback is missing.
-  // `win` is the window, passed in so tests can fake it.
-  function afterPaint(fn, win) {
-    win.requestAnimationFrame(() => {
-      if (win.requestIdleCallback) win.requestIdleCallback(fn, { timeout: 1000 });
-      else win.setTimeout(fn, 200);
-    });
-  }
-  // The next step of work already started after paint: from requestIdleCallback (at most 1s later), or as a task
-  // of its own where requestIdleCallback is missing, so a chain of steps does not wait 200ms between steps.
-  function whenIdle(fn, win) {
+  // `fn` from requestIdleCallback (at most 1s later; `fn` gets its deadline), or after a `fallbackMs` timer where
+  // requestIdleCallback is missing. `win` is the window, passed in so tests can fake it.
+  function idle(fn, win, fallbackMs) {
     if (win.requestIdleCallback) win.requestIdleCallback(fn, { timeout: 1000 });
-    else win.setTimeout(fn, 0);
+    else win.setTimeout(fn, fallbackMs);
   }
+  // Runs `fn` once the page has painted and the browser is idle: after the next frame, when idle, or 200ms after
+  // that frame where requestIdleCallback is missing.
+  function afterPaint(fn, win) { win.requestAnimationFrame(() => idle(fn, win, 200)); }
+  // The next step of work already started after paint: when idle, or as a task of its own where
+  // requestIdleCallback is missing, so a chain of steps does not wait 200ms between steps.
+  function whenIdle(fn, win) { idle(fn, win, 0); }
 
   // What a keydown does to the intro loader: "close", "close-no-scroll" for a scroll key (the caller also
   // cancels the scroll), or "ignore" for a modifier on its own or a shortcut with Cmd, Ctrl or Alt held.

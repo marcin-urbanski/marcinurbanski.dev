@@ -420,6 +420,13 @@ test("under reduced motion the face is drawn once, not again on every scroll", (
   assert.doesNotMatch(js, /if \(still\) window\.addEventListener\("scroll"/);
 });
 
+// Without effects.js the head script drops html.motion after 4s and the headline lines jump into place.
+test("without the page loop the portrait measures the headline again once html.motion is dropped", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  assert.match(js, /if \(still && root\.classList\.contains\("motion"\)\) new MutationObserver\(/);
+  assert.match(js, /\.observe\(root, \{ attributeFilter: \["class"\] \}\)/);
+});
+
 test("window.SiteLoop exposes the loop's read phase", () => {
   const js = fs.readFileSync(path.join(__dirname, "../public/effects.js"), "utf8");
   assert.match(js, /addRead: loop\.addRead,/);

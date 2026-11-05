@@ -322,6 +322,14 @@
   window.addEventListener("scroll", () => { scrollTop = window.scrollY; }, { passive: true });
   // The hero reveal (effects.js intro) may start before or after the first measure.
   heroText.addEventListener("transitionrun", followReveal);
+  // Without the page loop the head script drops html.motion after 4s and the lines jump into place with no
+  // transition, so measure them and draw once more then. Under reduced motion html.motion is never set.
+  const root = document.documentElement;
+  if (still && root.classList.contains("motion")) new MutationObserver((_, obs) => {
+    if (root.classList.contains("motion")) return;
+    obs.disconnect();
+    if (ready) { measureZones(); drawFace(0); }
+  }).observe(root, { attributeFilter: ["class"] });
 
   // The page loop's dt is in 60fps frames; step() takes seconds. The bubbles run across the page, the face
   // draws only while the hero is on screen. While the intro loader covers the page (<html class="intro">)
