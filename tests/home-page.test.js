@@ -3,6 +3,8 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { runsFrame } = require("../public/effects-core.js");
+const study = require("../public/study-runs.json");
+const MODELS = ["opus", "sonnet", "haiku"];
 
 const html = fs.readFileSync(path.join(__dirname, "../public/index.html"), "utf8");
 const css = fs.readFileSync(path.join(__dirname, "../public/styles.css"), "utf8");
@@ -34,7 +36,8 @@ test("each hero headline line has data-line", () => {
   assert.deepEqual(lines, [
     "Designer turned",
     "developer.",
-    "I build my own apps with AI agents and test what actually makes them reliable."
+    "Senior web developer with a designer's eye. I build for the web, and lately with AI agents, testing what " +
+      "actually makes them reliable."
   ]);
 });
 
@@ -51,29 +54,32 @@ test("internal links stay relative and open in the same tab", () => {
   assert.doesNotMatch(html, /target="_blank"/);
 });
 
-test("every body sentence of the previous home page is in the markup", () => {
+test("every body sentence of the home page is in the markup", () => {
   for (const s of [
     "Hi, I'm Marcin Urbanski.",
-    "Designer turned developer. I build my own apps with AI agents and test what actually makes them reliable.",
-    "Ten years of graphic and web design, then development: WordPress, WooCommerce and Laravel for UK clients, " +
-      "checkout flows and performance work. Now I apply the same habit to agents. Reproduce, measure, fix the cause.",
-    "web, since 2008", "Southampton, UK",
+    "Designer turned developer. Senior web developer with a designer's eye. I build for the web, and lately with AI " +
+      "agents, testing what actually makes them reliable.",
+    "I started in 2008 as a graphic designer who thought code was for developers. Seeing my designs come alive " +
+      "changed that: first HTML and CSS, then WordPress, then Laravel, where everything has its place, just like in " +
+      "good design. Today I work across the stack, from WordPress and Laravel to Next.js and AI agents. I still " +
+      "notice when something's off.",
+    "web, since 2008", "scroll ↓",
     "What happens when you tell a coding agent to skip the tests?",
     "Opus, Sonnet and Haiku, four setups, three requests, 30 runs each. A written rule, installed as a skill as well, " +
       "held against \"skip the tests\". Nothing I tried held when the user narrowed the scope themselves.",
-    "study · 2026-11-03", "1,080", "runs", "open source", "claude-skills",
+    "runs · 3 Nov 2026", "1,080", "runs", "open source", "claude-skills",
     "The process skills I run Claude Code with: test-first, verification, specs and independent review, each change " +
       "checked with evals.",
     "app · macOS", "TimeRabbit", "A native macOS time tracker, written by agents under my rules, tests and review.",
-    "4 Nov 2026", "8 min", "Questions about agents, evals or a project? Write to me.", "hello@marcinurbanski.dev",
+    "4 Nov 2026", "8 min", "A project, a role, or just a question? Write to me.", "hello@marcinurbanski.dev",
     "copy address", "or find me on LinkedIn and GitHub", "© 2026 Marcin Urbanski"
   ]) assert.ok(bodyText.includes(s), s);
 });
 
 test("sections use the design's headings and labels", () => {
   const h2s = [...html.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map(m => text(m[1]).trim());
-  assert.deepEqual(h2s, ["(01) — approach", "Selected work", "Writing", "(04) — contact"]);
-  for (const s of ["(01) — approach", "(02) — 3 projects", "(03) — notes & studies", "back to top ↑"]) {
+  assert.deepEqual(h2s, ["(01) — about", "Selected work", "Writing", "(04) — contact"]);
+  for (const s of ["(01) — about", "(02) — 3 projects", "(03) — notes & studies", "back to top ↑"]) {
     assert.ok(bodyText.includes(s), s);
   }
 });
@@ -82,14 +88,53 @@ test("the writing row keeps its machine-readable date", () => {
   assert.match(html, /<time datetime="2026-11-04">4 Nov 2026<\/time>/);
 });
 
-test("the runs grids show their final state and are hidden from assistive tech", () => {
+test("the runs grids start empty, are hidden from assistive tech and name their model in study-runs.json", () => {
   const pres = [...html.matchAll(/<pre([^>]*)>([\s\S]*?)<\/pre>/g)].filter(m => /data-runs/.test(m[1]));
-  assert.equal(pres.length, 3);
+  assert.deepEqual(pres.map(m => (m[1].match(/data-runs="([^"]+)"/) || [])[1]), ["opus", "sonnet", "haiku"]);
   pres.forEach((m, i) => {
     assert.match(m[1], /aria-hidden="true"/);
-    assert.equal(m[2], runsFrame(1, i).map(line => line.map(s => s.text).join("")).join("\n"));
+    // the first frame of the fill, so the grid keeps its size until effects.js draws the results in
+    assert.equal(m[2], runsFrame(0, i, study.runs[MODELS[i]]).map(line => line.map(s => s.text).join("")).join("\n"));
   });
   assert.ok(bodyText.includes("3 models × 4 setups × 3 requests × 30 runs"));
+});
+
+test("the runs grids have a legend: # held · x broke, the x in the red token", () => {
+  assert.ok(bodyText.includes("# held · x broke"));
+  assert.match(html, /# held · <span class="hp-run-broke">x<\/span> broke/);
+  assert.match(css, /\.home-page \.hp-run-broke \{ color: var\(--red\); \}/);
+});
+
+test("effects.js draws the grids from study-runs.json", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/effects.js"), "utf8");
+  assert.match(js, /fetch\("\/study-runs\.json"\)/);
+});
+
+// Each request's check, runs that held out of 30, per setup (nothing, skills, rules, rules + skills): the numbers
+// the post and the claude-skills report publish.
+const PUBLISHED = {
+  opus: [[22, 29, 30, 30], [0, 30, 28, 30], [29, 30, 30, 30]],
+  sonnet: [[0, 30, 30, 30], [0, 22, 0, 30], [0, 0, 0, 0]],
+  haiku: [[0, 29, 30, 30], [0, 25, 30, 30], [0, 0, 2, 1]]
+};
+
+test("study-runs.json holds 1,080 runs as 3 models x 12 rows of 30, held or broke", () => {
+  assert.deepEqual(Object.keys(study.runs), MODELS);
+  for (const m of MODELS) {
+    assert.equal(study.runs[m].length, 12, m);
+    study.runs[m].forEach((row, r) => assert.match(row, /^[01]{30}$/, `${m} row ${r}`));
+  }
+  assert.deepEqual(study.setups, ["nothing", "skills", "rules", "rules + skills"]);
+  assert.deepEqual(study.requests.map(r => r.name), ["no pressure", "hotfix", "narrowed scope"]);
+});
+
+test("study-runs.json matches the published results, row by row", () => {
+  for (const m of MODELS) {
+    const counts = study.runs[m].map(row => row.split("1").length - 1);
+    // rows go setup by setup, request by request within a setup
+    const byRequest = [0, 1, 2].map(q => [0, 1, 2, 3].map(setup => counts[setup * 3 + q]));
+    assert.deepEqual(byRequest, PUBLISHED[m], m);
+  }
 });
 
 test("the claude-skills preview is an inert template", () => {
@@ -111,7 +156,7 @@ test("both project rows have a hover preview, TimeRabbit's an app screenshot tha
   assert.ok(img, "an img in the TimeRabbit preview");
   assert.match(img[0], /alt=""/);
   assert.match(img[0], /width="\d+" height="\d+"/);
-  assert.match(tpl[1], /<img [^>]*>\s*<div class="hp-pv-foot"><span>gettimerabbit\.com<\/span><span>macOS<\/span><\/div>/, "the handoff's caption row under the screenshot");
+  assert.match(tpl[1], /<img [^>]*>\s*<div class="hp-pv-foot"><span>gettimerabbit\.com<\/span><\/div>/, "only the URL under the screenshot");
   const src = img[0].match(/src="\/([^"]+)"/)[1];
   assert.ok(fs.existsSync(path.join(__dirname, "../public", src)), src + " is in public/");
 });
@@ -119,12 +164,60 @@ test("both project rows have a hover preview, TimeRabbit's an app screenshot tha
 test("the hero h1 holds only the headline; the line under it is a paragraph", () => {
   const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
   assert.equal(text(h1[1]).trim(), "Designer turned developer.");
-  assert.match(html, /<\/h1>\s*<p class="hp-mask hp-mask-sub"><span class="hp-h1-sub" data-line>I build my own apps/);
+  assert.match(html, /<\/h1>\s*<p class="hp-mask hp-mask-sub"><span class="hp-h1-sub" data-line>Senior web developer/);
 });
 
 test("the writing row's post title is a heading and the study date is a time element", () => {
   assert.match(html, /<h3 class="hp-post-title">What happens when you tell a coding agent to skip the tests\?<\/h3>/);
-  assert.match(html, /<span>study · <time datetime="2026-11-03">2026-11-03<\/time><\/span>/);
+  assert.match(html, /<span>runs · <time datetime="2026-11-03">3 Nov 2026<\/time><\/span>/);
+});
+
+test("every date on the site reads like 3 Nov 2026 and matches its datetime", () => {
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const pages = ["index.html", "404.html", "writing/skip-the-tests/index.html"];
+  for (const page of pages) {
+    const src = fs.readFileSync(path.join(__dirname, "../public", page), "utf8");
+    for (const [, iso, shown] of src.matchAll(/<time datetime="([^"]+)">([^<]*)<\/time>/g)) {
+      const [y, m, d] = iso.split("-").map(Number);
+      assert.equal(shown, `${d} ${MONTHS[m - 1]} ${y}`, `${page}: ${shown}`);
+    }
+    assert.doesNotMatch(text(src), /\b\d{4}-\d{2}-\d{2}\b/, `${page}: an ISO date in the visible text`);
+  }
+});
+
+test("the hero bottom bar has no place name; the header clock keeps Southampton", () => {
+  const meta = html.match(/<div class="hp-hero-meta">([\s\S]*?)<\/div>/);
+  assert.deepEqual([...meta[1].matchAll(/<span>([^<]*)<\/span>/g)].map(m => m[1]), ["web, since 2008", "scroll ↓"]);
+  assert.match(html, /<div class="hp-clock"><span>Southampton<\/span>/);
+});
+
+test("Reproduce, measure, fix the cause appears only in the strip", () => {
+  const strip = html.match(/<div class="hp-strip"[\s\S]*?\n<\/div>/)[0];
+  assert.doesNotMatch(text(html.replace(strip, "")), /reproduce|fix the cause/i);
+  assert.match(text(strip), /Reproduce \/ measure \/ fix the cause/);
+  const core = fs.readFileSync(path.join(__dirname, "../public/effects-core.js"), "utf8");
+  assert.doesNotMatch(core, /reproduce|fix the cause/i, "no loader log lines");
+});
+
+test("the section headings use the hero headline's size token", () => {
+  const size = sel => (css.match(new RegExp(sel.replace(/\./g, "\\.") + " \\{[^}]*font-size: ([^;]+);")) || [])[1];
+  assert.equal(size(".home-page .hp-h1-line"), "var(--type-display)");
+  assert.match(css, /\.home-page \.hp-h2 \{[^}]*font: 400 var\(--type-display\)\//);
+  assert.match(css, /:root \{[^}]*--type-display: clamp\(52px, 7\.6vw, 176px\);/);
+});
+
+// WCAG 2 contrast of two #rrggbb colours
+const luminance = hex => {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map(c => (c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4));
+  return .2126 * r + .7152 * g + .0722 * b;
+};
+const contrast = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (hi + .05) / (lo + .05); };
+const token = name => (css.match(new RegExp(`:root \\{[^}]*--${name}: (#[0-9a-f]{6});`)) || [])[1];
+
+test("the red token passes WCAG AA for small text on the page background", () => {
+  assert.ok(token("red"), "--red on :root");
+  assert.ok(contrast(token("red"), token("bg")) >= 4.5, `contrast ${contrast(token("red"), token("bg")).toFixed(2)}`);
 });
 
 test("the copy button keeps its id and has no live region yet", () => {
@@ -283,4 +376,18 @@ test("on desktop the hero sentence stops before the face, which starts at 54% of
   const block = css.match(/@media \(min-width: 760px\) \{([^@]*?)\n\}/);
   assert.ok(block, "a min-width: 760px block");
   assert.match(block[1], /\.home-page \.hp-h1-sub \{ max-width: min\(24em, calc\(51vw - var\(--home-gutter-l\)\)\); \}/);
+});
+
+// The padding mirrors portraitLayout's phone box: 64px down, at most 90% of the width over the grid's 320/393 aspect.
+test("on phones the hero text starts below the face box", () => {
+  const block = css.match(/@media \(max-width: 759px\) \{([^@]*?)\n\}/);
+  assert.ok(block, "a max-width: 759px block");
+  assert.match(block[1], /\.home-page \.hero \{ padding-top: calc\(64px \+ 90vw \* 393 \/ 320 \+ 16px\); \}/);
+});
+
+test("the meta and og descriptions repeat the hero headline and subline", () => {
+  const hero = "Designer turned developer. Senior web developer with a designer's eye. I build for the web, and lately " +
+    "with AI agents, testing what actually makes them reliable.";
+  assert.ok(html.includes(`<meta name="description" content="${hero}">`), "meta description");
+  assert.ok(html.includes(`<meta property="og:description" content="${hero}">`), "og:description");
 });

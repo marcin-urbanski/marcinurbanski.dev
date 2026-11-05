@@ -74,14 +74,13 @@ test("easeInOutQuad is slow at both ends", () => {
 
 const EMPTY_BAR = "[" + ".".repeat(24) + "]";
 const FULL_BAR = "[" + "#".repeat(24) + "]";
-const ALL_LINES = ["> reproduce  ok", "> measure  ok", "> fix the cause  ok"];
 
-test("loaderState starts at 000 with an empty bar and no log lines", () => {
-  assert.deepEqual(loaderState(0), { count: "000", bar: EMPTY_BAR, lines: [], done: false });
+test("loaderState starts at 000 with an empty bar", () => {
+  assert.deepEqual(loaderState(0), { count: "000", bar: EMPTY_BAR, done: false });
 });
 
 test("loaderState clamps time before the start to the first frame", () => {
-  assert.deepEqual(loaderState(-100), { count: "000", bar: EMPTY_BAR, lines: [], done: false });
+  assert.deepEqual(loaderState(-100), { count: "000", bar: EMPTY_BAR, done: false });
 });
 
 test("loaderState counter and bar follow ease-out-cubic", () => {
@@ -91,20 +90,12 @@ test("loaderState counter and bar follow ease-out-cubic", () => {
   assert.equal(s.bar, "[" + "#".repeat(21) + "...]");
 });
 
-test("loaderState prints no log line at 0.2", () => {
-  assert.deepEqual(loaderState(1700 * .2).lines, []);
-});
-
-test("loaderState prints the first log line at 0.5", () => {
-  assert.deepEqual(loaderState(1700 * .5).lines, ["> reproduce  ok"]);
-});
-
-test("loaderState ends at 100 with a full bar and every log line after 1.7s", () => {
-  assert.deepEqual(loaderState(1700), { count: "100", bar: FULL_BAR, lines: ALL_LINES, done: true });
+test("loaderState ends at 100 with a full bar after 1.7s", () => {
+  assert.deepEqual(loaderState(1700), { count: "100", bar: FULL_BAR, done: true });
 });
 
 test("loaderState stays on the final frame after 1.7s", () => {
-  assert.deepEqual(loaderState(5000), { count: "100", bar: FULL_BAR, lines: ALL_LINES, done: true });
+  assert.deepEqual(loaderState(5000), { count: "100", bar: FULL_BAR, done: true });
 });
 
 test("formatCount groups thousands the en-GB way", () => {
@@ -117,51 +108,69 @@ test("formatCount rounds to a whole number", () => {
 });
 
 const text = lines => lines.map(l => l.map(s => s.text).join("")).join("\n");
-const doneCells = lines => lines.flat().filter(s => s.state === "done").reduce((n, s) => n + s.text.length, 0);
+const doneCells = lines => lines.flat().filter(s => s.state === "held" || s.state === "broke").reduce((n, s) => n + s.text.length, 0);
 const BLANK_LINES = [3, 7, 11];
 // 15 lines, every row the same segments, a blank line between groups
 const every = row => Array.from({ length: 15 }, (_, i) => (BLANK_LINES.includes(i) ? [] : row));
 const ALL_PENDING = every([{ state: "pending", text: ".".repeat(30) }]);
-const ALL_DONE = every([{ state: "done", text: "#".repeat(30) }]);
+const ALL_HELD = every([{ state: "held", text: "#".repeat(30) }]);
+// A model's results as study-runs.json has them: 12 rows of 30 runs, "1" held, "0" broke
+const HELD = Array.from({ length: 12 }, () => "1".repeat(30));
+const MIXED = HELD.map((r, i) => (i === 0 ? "0" + "1".repeat(29) : i === 4 ? "1".repeat(27) + "010" : i === 11 ? "0".repeat(30) : r));
 
 test("runsFrame draws 12 rows of 30 cells in 4 groups of 3", () => {
-  const lines = runsFrame(.5, 0);
+  const lines = runsFrame(.5, 0, MIXED);
   assert.equal(lines.length, 15);
   lines.forEach((l, i) => assert.equal(l.map(s => s.text).join("").length, BLANK_LINES.includes(i) ? 0 : 30, `line ${i}`));
 });
 
 test("runsFrame at 0 shows every cell pending", () => {
-  assert.deepEqual(runsFrame(0, 0), ALL_PENDING);
+  assert.deepEqual(runsFrame(0, 0, MIXED), ALL_PENDING);
 });
 
 test("runsFrame clamps progress below 0 to the first frame", () => {
-  assert.deepEqual(runsFrame(-1, 0), ALL_PENDING);
+  assert.deepEqual(runsFrame(-1, 0, MIXED), ALL_PENDING);
 });
 
-test("runsFrame at 1 shows every model fully done", () => {
-  for (const model of [0, 1, 2]) assert.deepEqual(runsFrame(1, model), ALL_DONE, `model ${model}`);
+test("runsFrame at 1 shows every run of a model whose rule always held as #", () => {
+  for (const model of [0, 1, 2]) assert.deepEqual(runsFrame(1, model, HELD), ALL_HELD, `model ${model}`);
 });
 
 test("runsFrame clamps progress above 1 to the final frame", () => {
-  assert.deepEqual(runsFrame(2, 2), ALL_DONE);
+  assert.deepEqual(runsFrame(2, 2, HELD), ALL_HELD);
+});
+
+test("runsFrame at 1 shows each run's own result: # held, x broke", () => {
+  const lines = runsFrame(1, 0, MIXED);
+  assert.deepEqual(lines[0], [{ state: "broke", text: "x" }, { state: "held", text: "#".repeat(29) }]);
+  assert.deepEqual(lines[5], [{ state: "held", text: "#".repeat(27) }, { state: "broke", text: "x" }, { state: "held", text: "#" }, { state: "broke", text: "x" }]);
+  assert.deepEqual(lines[14], [{ state: "broke", text: "x".repeat(30) }]);
+  assert.equal(text(lines).replace(/[^x]/g, "").length, 33);
 });
 
 test("runsFrame at 0.5 has later models behind earlier ones", () => {
   // q = .6, .5, .4, eased with ease-in-out-quad: .68, .5, .32 of 360 runs
-  assert.equal(doneCells(runsFrame(.5, 0)), 245);
-  assert.equal(doneCells(runsFrame(.5, 1)), 180);
-  assert.equal(doneCells(runsFrame(.5, 2)), 115);
+  assert.equal(doneCells(runsFrame(.5, 0, MIXED)), 245);
+  assert.equal(doneCells(runsFrame(.5, 1, MIXED)), 180);
+  assert.equal(doneCells(runsFrame(.5, 2, MIXED)), 115);
 });
 
 test("runsFrame marks the run in progress with a current cell", () => {
   // 245 done runs: rows 0-7 full, row 8 (line 10) has 5 done, then the current run
-  const lines = runsFrame(.5, 0);
-  assert.deepEqual(lines[9], [{ state: "done", text: "#".repeat(30) }]);
+  const lines = runsFrame(.5, 0, HELD);
+  assert.deepEqual(lines[9], [{ state: "held", text: "#".repeat(30) }]);
   assert.deepEqual(lines[10], [
-    { state: "done", text: "#####" }, { state: "current", text: ">" }, { state: "pending", text: ".".repeat(24) }
+    { state: "held", text: "#####" }, { state: "current", text: ">" }, { state: "pending", text: ".".repeat(24) }
   ]);
   assert.deepEqual(lines[12], [{ state: "pending", text: ".".repeat(30) }]);
   assert.equal(text(lines).split(">").length, 2);
+});
+
+test("runsFrame shows a done run's result while the grid fills", () => {
+  // 180 done runs for model 1: row 6 (line 7 is blank, so line 8) is the first not yet started
+  const lines = runsFrame(.5, 1, MIXED);
+  assert.deepEqual(lines[0], [{ state: "broke", text: "x" }, { state: "held", text: "#".repeat(29) }]);
+  assert.deepEqual(lines[8], [{ state: "pending", text: ".".repeat(30) }]);
 });
 
 test("litPercent is -4 when the text top reaches 88% of the viewport", () => {

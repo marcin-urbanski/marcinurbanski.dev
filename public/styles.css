@@ -13,9 +13,11 @@
   --line: #262622;
   --line-2: #2c2c28;
   --acc: #ecebe6;
+  --red: #ff4d3d;          /* the site's one colour: a broken rule in the runs grids, 6:1 on --bg */
   --display: "Geist", "Helvetica Neue", Arial, sans-serif;
   --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --serif: "Newsreader", Georgia, serif;
+  --type-display: clamp(52px, 7.6vw, 176px);   /* the hero headline and the section headings */
   --ease: cubic-bezier(.16, 1, .3, 1);
   --ease-wipe: cubic-bezier(.76, 0, .24, 1);
   --gutter-l: max(16px, env(safe-area-inset-left, 0px), 4vw);
@@ -115,7 +117,7 @@ html:has(> body.home-page) { scroll-behavior: smooth; }
 .home-page .hp-acc { color: var(--acc); }
 .home-page .hp-label { margin: 0; font: 400 13px/normal var(--mono); color: var(--muted-2); }
 .home-page .hp-small { font: 400 12px/normal var(--mono); color: var(--muted-2); }
-.home-page .hp-h2 { margin: 0; font: 400 clamp(60px, 11vw, 200px)/.84 var(--display); letter-spacing: -.055em; }
+.home-page .hp-h2 { margin: 0; font: 400 var(--type-display)/.84 var(--display); letter-spacing: -.055em; }
 .home-page .hp-h2 > span { display: block; }
 .home-page .hp-sec-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
 .home-page .hp-sec-aside { display: flex; gap: 24px; }
@@ -136,11 +138,16 @@ html:has(> body.home-page) { scroll-behavior: smooth; }
 .home-page .hp-mask-1 { padding-bottom: .04em; }
 .home-page .hp-mask-2 { padding-bottom: .06em; }
 .home-page .hp-mask-sub { margin: clamp(20px, 2.6vw, 40px) 0 0; }
-.home-page .hp-h1-line { display: block; font-size: clamp(52px, 7.6vw, 176px); line-height: .9; letter-spacing: -.05em; }
+.home-page .hp-h1-line { display: block; font-size: var(--type-display); line-height: .9; letter-spacing: -.05em; }
 .home-page .hp-h1-sub { display: block; max-width: 24em; font-size: clamp(22px, 2.5vw, 40px); line-height: 1.18; letter-spacing: -.02em; text-wrap: pretty; }
 /* Desktop: the face box starts at 54% of the width or further right (portraitLayout), so the sentence stops 3vw before it */
 @media (min-width: 760px) {
   .home-page .hp-h1-sub { max-width: min(24em, calc(51vw - var(--home-gutter-l))); }
+}
+/* Phones: the face box sits at the top, 64px down and at most 90vw / (320 / 393) tall (portraitLayout), so the
+   text starts below it and the hero grows when the text needs more room */
+@media (max-width: 759px) {
+  .home-page .hero { padding-top: calc(64px + 90vw * 393 / 320 + 16px); }
 }
 .home-page .hp-hero-meta { position: relative; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; margin-top: clamp(40px, 8vh, 96px); padding-top: 16px; border-top: 1px solid var(--line); font: 400 13px/normal var(--mono); color: var(--muted-2); }
 
@@ -174,9 +181,11 @@ html.motion .home-page [data-words].is-lit {
 .home-page .hp-count-unit { font: 400 14px/normal var(--mono); color: var(--acc); }
 .home-page .hp-models { display: flex; flex-wrap: wrap; gap: clamp(14px, 2vw, 28px); }
 .home-page .hp-model { display: flex; flex-direction: column; gap: 10px; }
-.home-page .hp-model pre { margin: 0; font: 400 10px/1.3 var(--mono); color: var(--ink); }
-/* Runs grid cells while effects.js fills it */
-.home-page .hp-run-done { color: var(--ink); }
+.home-page .hp-model pre { margin: 0; font: 400 10px/1.3 var(--mono); color: var(--ascii-dim); }
+.home-page .hp-runs-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; }
+/* Runs grid cells: effects.js draws each run from study-runs.json, # where the rule held and x where it broke */
+.home-page .hp-run-held { color: var(--ink); }
+.home-page .hp-run-broke { color: var(--red); }
 .home-page .hp-run-current { color: var(--acc); }
 .home-page .hp-run-pending { color: var(--ascii-dim); }
 
@@ -215,9 +224,7 @@ html.motion .home-page [data-words].is-lit {
 .home-page .hp-loader.is-out { transform: translateY(-100%); }
 .home-page .hp-loader-row { display: flex; justify-content: space-between; gap: 16px; }
 .home-page .hp-loader-foot { align-items: flex-end; flex-wrap: wrap; gap: 24px; }
-.home-page .hp-loader-logs { display: flex; flex-direction: column; gap: 14px; }
 .home-page .hp-loader pre { margin: 0; font: inherit; }
-.home-page .hp-loader-log { min-height: 4.5em; }
 .home-page .hp-loader-bar { color: var(--ink); }
 .home-page .hp-loader-num { font: 300 clamp(96px, 18vw, 280px)/.78 var(--display); letter-spacing: -.05em; color: var(--ink); }
 
