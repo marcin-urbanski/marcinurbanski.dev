@@ -278,3 +278,9 @@ test("the portrait draws in the --mono font (Geist Mono) and runs in the page lo
   assert.match(js, /getPropertyValue\("--mono"\)/);
   assert.match(js, /SiteLoop\.whileVisible\(face,/);
 });
+
+test("on desktop the hero sentence stops before the face, which starts at 54% of the width", () => {
+  const block = css.match(/@media \(min-width: 760px\) \{([^@]*?)\n\}/);
+  assert.ok(block, "a min-width: 760px block");
+  assert.match(block[1], /\.home-page \.hp-h1-sub \{ max-width: min\(24em, calc\(51vw - var\(--home-gutter-l\)\)\); \}/);
+});

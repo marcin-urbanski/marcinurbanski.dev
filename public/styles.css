@@ -138,6 +138,10 @@ html:has(> body.home-page) { scroll-behavior: smooth; }
 .home-page .hp-mask-sub { margin: clamp(20px, 2.6vw, 40px) 0 0; }
 .home-page .hp-h1-line { display: block; font-size: clamp(52px, 7.6vw, 176px); line-height: .9; letter-spacing: -.05em; }
 .home-page .hp-h1-sub { display: block; max-width: 24em; font-size: clamp(22px, 2.5vw, 40px); line-height: 1.18; letter-spacing: -.02em; text-wrap: pretty; }
+/* Desktop: the face box starts at 54% of the width or further right (portraitLayout), so the sentence stops 3vw before it */
+@media (min-width: 760px) {
+  .home-page .hp-h1-sub { max-width: min(24em, calc(51vw - var(--home-gutter-l))); }
+}
 .home-page .hp-hero-meta { position: relative; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; margin-top: clamp(40px, 8vh, 96px); padding-top: 16px; border-top: 1px solid var(--line); font: 400 13px/normal var(--mono); color: var(--muted-2); }
 
 /* 3 Approach: fully lit by default; the script adds the dim start */
