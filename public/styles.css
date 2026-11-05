@@ -56,7 +56,7 @@ header.top .home { color: var(--ink); text-decoration: none; }
 
 /* Writing */
 .post { max-width: 680px; margin: 0 auto; padding-top: 12vh; }
-.post-meta { display: flex; gap: 20px; flex-wrap: wrap; margin: 0; font: 400 12px/1.6 var(--mono); color: var(--muted-2); }
+.post .post-meta { display: flex; gap: 20px; flex-wrap: wrap; margin: 0; font: 400 12px/1.6 var(--mono); color: var(--muted-2); }
 .post h1 { margin: 16px 0 0; font: 500 clamp(34px, 4.4vw, 56px)/1.08 var(--display); letter-spacing: -.02em; text-wrap: balance; }
 .post .dek { margin: 24px 0 56px; font-size: 20px; line-height: 1.5; color: var(--muted-1); text-wrap: pretty; }
 .post p, .post li { font-size: 18px; line-height: 1.65; text-wrap: pretty; }
