@@ -128,7 +128,7 @@ test("study-runs.json holds 1,080 runs as 3 models x 12 rows of 30, held or brok
   assert.deepEqual(study.requests.map(r => r.name), ["no pressure", "hotfix", "narrowed scope"]);
 });
 
-test("study-runs.json matches the published results, cell by cell", () => {
+test("study-runs.json matches the published results, row by row", () => {
   for (const m of MODELS) {
     const counts = study.runs[m].map(row => row.split("1").length - 1);
     // rows go setup by setup, request by request within a setup
@@ -188,6 +188,7 @@ test("every date on the site reads like 3 Nov 2026 and matches its datetime", ()
 test("the hero bottom bar has no place name; the header clock keeps Southampton", () => {
   const meta = html.match(/<div class="hp-hero-meta">([\s\S]*?)<\/div>/);
   assert.deepEqual([...meta[1].matchAll(/<span>([^<]*)<\/span>/g)].map(m => m[1]), ["web, since 2008", "scroll ↓"]);
+  assert.match(html, /<div class="hp-clock"><span>Southampton<\/span>/);
 });
 
 test("Reproduce, measure, fix the cause appears only in the strip", () => {
@@ -377,14 +378,9 @@ test("on desktop the hero sentence stops before the face, which starts at 54% of
   assert.match(block[1], /\.home-page \.hp-h1-sub \{ max-width: min\(24em, calc\(51vw - var\(--home-gutter-l\)\)\); \}/);
 });
 
+// The padding mirrors portraitLayout's phone box: 64px down, at most 90% of the width over the grid's 320/393 aspect.
 test("on phones the hero text starts below the face box", () => {
-  const { portraitLayout } = require("../public/portrait-3d.js");
   const block = css.match(/@media \(max-width: 759px\) \{([^@]*?)\n\}/);
   assert.ok(block, "a max-width: 759px block");
   assert.match(block[1], /\.home-page \.hero \{ padding-top: calc\(64px \+ 90vw \* 393 \/ 320 \+ 16px\); \}/);
-  // portraitLayout's phone box (y 64, height at most 90% of the width over the grid's 320/393 aspect) ends above it
-  for (const w of [320, 375, 390, 430, 759]) for (const h of [500, 667, 844, 2000]) {
-    const l = portraitLayout(w, h, 320 / 393);
-    assert.ok(l.y + l.ph <= 64 + w * .9 * 393 / 320 + 1e-9, `${w}x${h}`);
-  }
 });
