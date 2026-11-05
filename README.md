@@ -15,8 +15,8 @@ Personal site and writing of Marcin Urbanski. Plain HTML, CSS and JS in `public/
 - `public/writing/<slug>/`: posts, listed in `public/rss.xml`.
 - `tests/`: `node --test tests/` checks the pure logic in `public/`, the copy button and the home page markup.
 - `tools/portrait-depth.py`: offline script that builds the portrait's depth map; nothing from it ships.
-- `tools/asset-versions.js`: adds `?v=<hash>` to the script and stylesheet URLs in the HTML; run it after
-  changing a `.js` or `.css` file (see `DEPLOY.md`).
+- `tools/asset-versions.js`: adds `?v=<hash>` to the script and stylesheet URLs in the HTML; part of the
+  deploy command in `DEPLOY.md`.
 - `tools/study-runs.py`: offline script that writes `public/study-runs.json` from the study's results in claude-skills.
 - `docs/design/`: the design handoff for the home page; `docs/specs/` and `docs/plans/`: its spec and plan.
 - `DEPLOY.md`: running locally, deploying, adding a post.

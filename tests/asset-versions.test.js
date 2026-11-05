@@ -22,7 +22,9 @@ test("versionAssets leaves other URLs alone", () => {
 });
 
 test("assetHash is the first 8 hex characters of the file's SHA-256", () => {
-  assert.match(assetHash(path.join(PUBLIC, "styles.css")), /^[0-9a-f]{8}$/);
+  const file = path.join(fs.mkdtempSync(path.join(require("node:os").tmpdir(), "assets-")), "abc.js");
+  fs.writeFileSync(file, "abc");
+  assert.equal(assetHash(file), "ba7816bf");
 });
 
 // After a deploy the HTML is fetched fresh (max-age=0) while the zone lets browsers keep JS and CSS for 4 hours,
@@ -34,6 +36,10 @@ test("every page links each local script and stylesheet at its current version",
     const html = fs.readFileSync(page, "utf8");
     assert.equal(html, versionAssets(html, f => assetHash(path.join(PUBLIC, f))),
       `${path.relative(PUBLIC, page)} is out of date: run node tools/asset-versions.js`);
-    assert.doesNotMatch(html, /(?:src|href)="\/[^"?]+\.(?:js|css)"/, `${path.relative(PUBLIC, page)}: an unversioned asset`);
+    // any other way of writing a local script or stylesheet URL would slip past versionAssets
+    for (const [, url] of html.matchAll(/(?:src|href)\s*=\s*["']?([^"'\s>]+\.(?:js|css)(?:\?[^"'\s>]*)?)/g)) {
+      if (/^https?:/.test(url)) continue;
+      assert.match(url, /^\/[^?]+\?v=[0-9a-f]{8}$/, `${path.relative(PUBLIC, page)}: ${url} is not a versioned /path`);
+    }
   }
 });

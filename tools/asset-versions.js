@@ -1,5 +1,5 @@
-// Adds ?v=<hash> to every local script and stylesheet URL in the HTML pages in public/, run before a deploy
-// whenever a .js or .css file changes (tests/asset-versions.test.js fails until it has run). The HTML is served
+// Adds ?v=<hash> to every local script and stylesheet URL in the HTML pages in public/; part of the deploy
+// command in DEPLOY.md (tests/asset-versions.test.js fails while a page is out of date). The HTML is served
 // with max-age=0 but the zone lets browsers keep JS and CSS for 4 hours, so a new hash is what makes a returning
 // visitor fetch the new file instead of pairing new HTML with an old script.
 //
