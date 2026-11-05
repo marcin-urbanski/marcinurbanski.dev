@@ -12,11 +12,14 @@ Personal site and writing of Marcin Urbanski. Plain HTML, CSS and JS in `public/
 - `public/study-runs.json`: the result of each of the study's 1,080 runs, drawn by the home page runs grids.
 - `public/site.js`: the contact "copy address" button.
 - `public/portrait.js`: the ASCII portrait in the hero and the bubbles that build it.
+- `public/portrait-data.json`: the portrait's 320x393 brightness grid and its depth map at half resolution, as
+  base64; portrait.js fetches it after the first paint.
 - `public/portrait-3d.js`: the 3D maths for the portrait (depth map sampling, turning the face, lighting).
 - `public/writing/<slug>/`: posts, listed in `public/rss.xml`.
 - `tests/`: `node --test tests/` checks the pure logic in `public/`, the copy button and the home page markup.
-- `tools/portrait-depth.py`: offline script that builds the portrait's depth map; nothing from it ships.
-- `tools/asset-versions.js`: adds `?v=<hash>` to the script and stylesheet URLs in the HTML; part of the
+- `tools/portrait-depth.py`: offline script that builds the portrait's depth map into `public/portrait-data.json`;
+  `--check` only prints the grid sizes.
+- `tools/asset-versions.js`: adds `?v=<hash>` to the script, stylesheet and JSON data URLs in the HTML; part of the
   deploy command in `DEPLOY.md`.
 - `tools/study-runs.py`: offline script that writes `public/study-runs.json` from the study's results in claude-skills.
 - `docs/design/`: the design handoff for the home page; `docs/specs/` and `docs/plans/`: its spec and plan.

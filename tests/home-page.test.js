@@ -27,7 +27,7 @@ test("the hero keeps the hooks portrait.js looks up", () => {
   const hero = tag(/<section [^>]*>/g).find(t => /class="[^"]*\bhero\b/.test(t));
   assert.ok(hero, "a section with class hero");
   assert.match(hero, /id="top"/);
-  assert.match(html, /<canvas id="face" aria-hidden="true"><\/canvas>/);
+  assert.match(html, /<canvas id="face" aria-hidden="true" data-src="\/portrait-data\.json\?v=[0-9a-f]{8}"><\/canvas>/);
   assert.match(html, /<canvas id="bubbles" aria-hidden="true"><\/canvas>/);
 });
 
@@ -370,6 +370,22 @@ test("the portrait draws in the --mono font (Geist Mono) and runs in the page lo
   assert.doesNotMatch(js, /requestAnimationFrame/);
   assert.match(js, /getPropertyValue\("--mono"\)/);
   assert.match(js, /SiteLoop\.whileVisible\(face,/);
+});
+
+// Spec AC 10: the face's grids are their own asset, fetched after the first paint, not inlined in the script.
+test("portrait-data.json holds the 320x393 brightness grid and the 160x197 depth grid", () => {
+  const { lum, depth } = require("../public/portrait-data.json");
+  assert.deepEqual([lum.w, lum.h, depth.w, depth.h, depth.scale], [320, 393, 160, 197, 2]);
+  assert.equal(Buffer.from(lum.b64, "base64").length, 125760);
+  assert.equal(Buffer.from(depth.b64, "base64").length, 31520);
+});
+
+test("portrait.js holds no data and is under 22,000 bytes", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  assert.doesNotMatch(js, /atob\(/);
+  assert.doesNotMatch(js, /[A-Za-z0-9+/]{200}/, "a base64 run");
+  assert.ok(Buffer.byteLength(js) < 22000, Buffer.byteLength(js) + " bytes");
+  assert.match(js, /fetch\(face\.dataset\.src\)/);
 });
 
 // The source of one top-level portrait.js function, from its declaration to the closing brace at its indent.

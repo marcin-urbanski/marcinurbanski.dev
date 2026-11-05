@@ -14,9 +14,9 @@ wrangler pages dev --port 8788    # http://localhost:8788, serves _headers and 4
 node tools/asset-versions.js && node --test tests/ && wrangler pages deploy --branch main
 ```
 
-The zone lets browsers keep static files (JS, CSS, images) for 4 hours, while HTML is always revalidated. The
-`?v=` hash the tool writes into each script and stylesheet URL makes a returning visitor fetch the new file after
-a deploy. An image that changes needs a new file name instead.
+The zone lets browsers keep static files (JS, CSS, JSON, images) for 4 hours, while HTML is always revalidated.
+The `?v=` hash the tool writes into each script, stylesheet and JSON data URL makes a returning visitor fetch the
+new file after a deploy. An image that changes needs a new file name instead.
 
 First deploy (2026-11-04): `wrangler pages project create marcinurbanski --production-branch main`, then the steps
 below in the Cloudflare dashboard.

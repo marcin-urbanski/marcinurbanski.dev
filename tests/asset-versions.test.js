@@ -15,6 +15,10 @@ test("versionAssets replaces an old version", () => {
   assert.equal(versionAssets('<script src="/a.js?v=0ld"></script>', () => "n3w"), '<script src="/a.js?v=n3w"></script>');
 });
 
+test("versionAssets versions a local JSON URL in data-src", () => {
+  assert.equal(versionAssets('<canvas id="face" data-src="/data.json"></canvas>', () => "h"), '<canvas id="face" data-src="/data.json?v=h"></canvas>');
+});
+
 test("versionAssets leaves other URLs alone", () => {
   const html = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist">' +
     '<img src="/shot.webp"><a href="/rss.xml"></a><link rel="icon" href="/favicon.svg">';
@@ -29,15 +33,15 @@ test("assetHash is the first 8 hex characters of the file's SHA-256", () => {
 
 // After a deploy the HTML is fetched fresh (max-age=0) while the zone lets browsers keep JS and CSS for 4 hours,
 // so each page must point at URLs that change whenever the file does.
-test("every page links each local script and stylesheet at its current version", () => {
+test("every page links each local script, stylesheet and data file at its current version", () => {
   const pages = htmlFiles(PUBLIC);
   assert.ok(pages.length >= 3, "the home page, 404 and the post");
   for (const page of pages) {
     const html = fs.readFileSync(page, "utf8");
     assert.equal(html, versionAssets(html, f => assetHash(path.join(PUBLIC, f))),
       `${path.relative(PUBLIC, page)} is out of date: run node tools/asset-versions.js`);
-    // any other way of writing a local script or stylesheet URL would slip past versionAssets
-    for (const [, url] of html.matchAll(/(?:src|href)\s*=\s*["']?([^"'\s>]+\.(?:js|css)(?:\?[^"'\s>]*)?)/g)) {
+    // any other way of writing a local script, stylesheet or data URL would slip past versionAssets
+    for (const [, url] of html.matchAll(/(?:src|href)\s*=\s*["']?([^"'\s>]+\.(?:json|js|css)(?:\?[^"'\s>]*)?)/g)) {
       if (/^https?:/.test(url)) continue;
       assert.match(url, /^\/[^?]+\?v=[0-9a-f]{8}$/, `${path.relative(PUBLIC, page)}: ${url} is not a versioned /path`);
     }
