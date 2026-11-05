@@ -191,25 +191,33 @@
     });
   }
 
-  // README section 5: each runs grid fills over 3s once 35% of the block is in view, later models a little
-  // behind. Done, current and pending cells are spans that styles.css colours. Without motion the <pre>s keep
-  // the full grids the HTML shows.
+  // README section 5: each runs grid shows the study's real runs from study-runs.json, # where the rule held and
+  // x where it broke. The HTML holds the empty first frame. With motion each grid fills over 3s once 35% of the
+  // block is in view, later models a little behind; without motion it is drawn full at once. Held, broke,
+  // current and pending cells are spans that styles.css colours.
+  const runsData = fetch("/study-runs.json").then(r => {
+    if (!r.ok) throw new Error("study-runs.json: HTTP " + r.status);
+    return r.json();
+  });
   function setupRuns() {
     const host = document.querySelector("[data-runs-host]"), pres = [...document.querySelectorAll("[data-runs]")];
     if (!host || !pres.length) return;
-    const render = p => pres.forEach((pre, i) => {
-      const frag = document.createDocumentFragment();
-      core.runsFrame(p, i).forEach((line, r) => {
-        if (r) frag.append("\n");
-        line.forEach(seg => frag.append(el("span", "hp-run-" + seg.state, seg.text)));
+    runsData.then(data => {
+      const render = p => pres.forEach((pre, i) => {
+        const frag = document.createDocumentFragment();
+        core.runsFrame(p, i, data.runs[pre.dataset.runs]).forEach((line, r) => {
+          if (r) frag.append("\n");
+          line.forEach(seg => frag.append(el("span", "hp-run-" + seg.state, seg.text)));
+        });
+        pre.replaceChildren(frag);
       });
-      pre.replaceChildren(frag);
-    });
-    render(0);
-    playOnce(host, .35, ms => {
-      render(ms / core.RUNS_MS);
-      return ms >= core.RUNS_MS;
-    });
+      if (!motion()) { render(1); return; }
+      render(0);
+      playOnce(host, .35, ms => {
+        render(ms / core.RUNS_MS);
+        return ms >= core.RUNS_MS;
+      });
+    }).catch(e => console.error(e));
   }
 
   // README section 5 "Hover preview panel": over a [data-preview] row a 320px panel, cloned from
@@ -247,19 +255,17 @@
     });
   }
 
-  // README section 0: 1.7s of counter, bar and log, a 220ms hold, then a 1s wipe up. A click or a key (not a
+  // README section 0: 1.7s of counter and bar, a 220ms hold, then a 1s wipe up. A click or a key (not a
   // modifier or a shortcut) skips it and a 2.6s timer closes it if frames are throttled. Shown once per tab.
   // `onClose` runs as it starts to close.
   function setupLoader(onClose) {
     try { sessionStorage.setItem(LOADER_KEY, "1"); } catch (e) {}
-    const log = el("pre", "hp-loader-log"), bar = el("pre", "hp-loader-bar"), num = el("span", "hp-loader-num");
-    const show = state => { num.textContent = state.count; bar.textContent = state.bar; log.textContent = state.lines.join("\n"); };
+    const bar = el("pre", "hp-loader-bar"), num = el("span", "hp-loader-num");
+    const show = state => { num.textContent = state.count; bar.textContent = state.bar; };
     const head = el("div", "hp-loader-row");
     head.append(el("span", "", "marcinurbanski.dev"), el("span", "", "running checks"));
-    const logs = el("div", "hp-loader-logs");
-    logs.append(log, bar);
     const foot = el("div", "hp-loader-row hp-loader-foot");
-    foot.append(logs, num);
+    foot.append(bar, num);
     loader = el("div", "hp-loader");
     loader.setAttribute("aria-hidden", "true");
     loader.append(head, foot);
@@ -315,6 +321,8 @@
     setupClock();
     setupCursor();
     setupPreview();
+    // Without motion nothing plays, but the runs grids still need their results drawn in, full at once.
+    if (!motion()) setupRuns();
     if (motion()) {
       setupScramble();
       setupLitText();

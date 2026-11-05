@@ -25,16 +25,13 @@
   const easeOutQuart = p => 1 - (1 - p) ** 4;
   const easeInOutQuad = p => (p < .5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2);
 
-  // The intro loader at `elapsedMs` (.dc.html:372–380): a 000–100 counter and a 24-cell bar eased out over
-  // 1.7s, and the log lines printed on linear progress.
+  // The intro loader at `elapsedMs` (.dc.html:372–380): a 000–100 counter and a 24-cell bar eased out over 1.7s.
   const LOADER_MS = 1700, LOADER_CELLS = 24;
-  const LOADER_LINES = ["> reproduce", "> measure", "> fix the cause"];
   function loaderState(elapsedMs) {
     const p = clamp(elapsedMs / LOADER_MS, 0, 1), k = easeOutCubic(p), filled = Math.round(k * LOADER_CELLS);
     return {
       count: String(Math.round(k * 100)).padStart(3, "0"),
       bar: "[" + "#".repeat(filled) + ".".repeat(LOADER_CELLS - filled) + "]",
-      lines: LOADER_LINES.slice(0, Math.min(3, Math.floor(p * 3.6))).map(l => l + "  ok"),
       done: p === 1
     };
   }
@@ -47,15 +44,21 @@
 
   // One frame of a model's runs grid (.dc.html:309–323) at progress = elapsed / RUNS_MS (the 3s fill): 360 runs
   // as 12 rows of 30 cells (4 setups x 3 requests, a blank line between setups), later models a little behind.
-  // Returns the grid's lines, each a list of { state: "done" | "current" | "pending", text } segments for the DOM
-  // code to wrap and colour.
+  // `rows` are the model's results from study-runs.json, 12 strings of 30 runs, "1" where the rule held and "0"
+  // where it broke; a done run shows # or x. Returns the grid's lines, each a list of
+  // { state: "held" | "broke" | "current" | "pending", text } segments for the DOM code to wrap and colour.
   const RUNS_MS = 3000, RUN_ROWS = 12, RUN_COLS = 30;
-  function runsFrame(progress, modelIndex) {
+  function runsFrame(progress, modelIndex, rows) {
     const q = clamp(progress * 1.2 - modelIndex * .1, 0, 1), runs = Math.round(easeInOutQuad(q) * RUN_ROWS * RUN_COLS);
     const lines = [];
     for (let r = 0; r < RUN_ROWS; r++) {
       if (r && r % 3 === 0) lines.push([]);
-      const done = clamp(runs - r * RUN_COLS, 0, RUN_COLS), segments = [{ state: "done", text: "#".repeat(done) }];
+      const done = clamp(runs - r * RUN_COLS, 0, RUN_COLS), segments = [];
+      for (const result of rows[r].slice(0, done)) {
+        const [state, glyph] = result === "1" ? ["held", "#"] : ["broke", "x"], last = segments[segments.length - 1];
+        if (last && last.state === state) last.text += glyph;
+        else segments.push({ state, text: glyph });
+      }
       if (done > 0 && done < RUN_COLS) {
         segments.push({ state: "current", text: ">" }, { state: "pending", text: ".".repeat(RUN_COLS - 1 - done) });
       } else {
