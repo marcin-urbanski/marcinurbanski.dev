@@ -9,9 +9,9 @@ enforce goes there instead.
 The few things that are most expensive to get wrong on marcinurbanski.dev.
 
 1. **Static files, nothing to install.** The site is plain HTML, CSS and JS in `public/`, deployed as is by
-   `wrangler pages deploy`: no build step, no npm runtime dependency, no framework. Pages load only their own files,
-   Google Fonts and what Cloudflare injects (Web Analytics). Offline tools in `tools/` may use anything; nothing
-   from them ships. *Why:* a build step or a CDN script turns a two-minute deploy into a broken page when it fails.
+   `wrangler pages deploy`: no build step, no npm runtime dependency, no framework. Pages load only their own files
+   and what Cloudflare injects (Web Analytics). Offline tools in `tools/` may use anything; nothing from them ships.
+   *Why:* a build step or a CDN script turns a two-minute deploy into a broken page when it fails.
    (0 findings)
 2. **Design values come from `:root`.** Colours, fonts and the accent are CSS custom properties on `:root` in
    `public/styles.css`; rules use `var(--…)` and canvases read them with `getComputedStyle`. No literal colour in a
