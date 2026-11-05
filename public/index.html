@@ -4,6 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Marcin Urbanski</title>
+<script>
+// Start states for effects.js: "motion" unless reduced motion, "intro" too while this tab has not seen the loader.
+// If effects.js has not taken over (data-fx="on") within 4s, show the page as it is.
+(function (root) {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var intro = true;
+  try { intro = !sessionStorage.getItem("loader-seen"); } catch (e) {}
+  root.classList.add("motion");
+  if (intro) root.classList.add("intro");
+  setTimeout(function () { if (root.dataset.fx !== "on") root.classList.remove("intro", "motion"); }, 4000);
+})(document.documentElement);
+</script>
 <meta name="description" content="Designer turned developer. I build my own apps with AI agents and test what actually makes them reliable.">
 <link rel="canonical" href="https://marcinurbanski.dev/">
 <link rel="alternate" type="application/rss+xml" title="Marcin Urbanski" href="https://marcinurbanski.dev/rss.xml">
@@ -15,86 +27,176 @@
 <meta property="og:url" content="https://marcinurbanski.dev/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=Fragment+Mono&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@300..500&family=Newsreader:ital,opsz,wght@1,6..72,300..500&display=swap">
 <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
+<body class="home-page">
 
 <canvas id="bubbles" aria-hidden="true"></canvas>
 
+<header class="hp-head">
+  <a href="#top" data-scramble>marcinurbanski.dev</a>
+  <nav aria-label="Main">
+    <a href="#work" data-scramble>work</a>
+    <a href="#writing" data-scramble>writing</a>
+    <a href="#contact" data-scramble>contact</a>
+  </nav>
+  <div class="hp-clock"><span>Southampton</span><span class="hp-clock-time" data-clock></span></div>
+</header>
+
 <main>
-<section class="hero">
+<section class="hero" id="top">
   <canvas id="face" aria-hidden="true"></canvas>
-  <div class="wrap">
-    <header class="top">
-      <span>marcinurbanski.dev</span>
-      <nav aria-label="Main">
-        <a href="#work">work</a>
-        <a href="#writing">writing</a>
-        <a href="#contact">contact</a>
-      </nav>
-    </header>
-    <div class="col">
-      <p class="name">Hi, I'm Marcin Urbanski.</p>
-      <h1 class="statement">Designer turned developer. I build my own apps with AI agents and <em>test what actually makes them reliable.</em></h1>
-      <p class="bio">Ten years of graphic and web design, then development: WordPress, WooCommerce and Laravel for UK clients, checkout flows and performance work. Now I apply the same habit to agents. Reproduce, measure, fix the cause.</p>
-      <div class="facts"><span>web, since 2008</span><span>Southampton, UK</span></div>
-    </div>
+  <div class="hp-hero-text">
+    <p class="hp-hi" data-hi>Hi, I'm Marcin Urbanski.</p>
+    <h1 class="hp-h1">
+      <span class="hp-mask hp-mask-1"><span class="hp-h1-line" data-line>Designer turned</span></span>
+      <span class="hp-mask hp-mask-2"><span class="hp-h1-line" data-line>developer.</span></span>
+      <span class="hp-mask hp-mask-sub"><span class="hp-h1-sub" data-line>I build my own apps with AI agents and <em class="hp-acc">test what actually makes them reliable.</em></span></span>
+    </h1>
+  </div>
+  <div class="hp-hero-meta">
+    <span>web, since 2008</span>
+    <span>Southampton, UK</span>
+    <span>scroll ↓</span>
   </div>
 </section>
 
-<div class="wrap">
-  <section class="sec" id="work">
-    <h2 class="sec-title"><span>selected work</span><span>3</span></h2>
-    <div class="work-grid">
-      <article class="item lead">
-        <div class="num">1,080<small>runs</small></div>
-        <h3><a href="/writing/skip-the-tests/">What happens when you tell a coding agent to skip the tests?</a></h3>
-        <p>Opus, Sonnet and Haiku, four setups, three requests, 30 runs each. A written rule, installed as a skill as well, held against "skip the tests". Nothing I tried held when the user narrowed the scope themselves.</p>
-        <span class="meta">study · 2026-11-03</span>
-      </article>
-      <article class="item">
-        <span class="meta">open source</span>
-        <h3><a href="https://github.com/marcin-urbanski/claude-skills">claude-skills</a></h3>
-        <p>The process skills I run Claude Code with: test-first, verification, specs and independent review, each change checked with evals.</p>
-      </article>
-      <article class="item">
-        <span class="meta">app · macOS</span>
-        <h3><a href="https://gettimerabbit.com">TimeRabbit</a></h3>
-        <p>A native macOS time tracker, written by agents under my rules, tests and review.</p>
-      </article>
-    </div>
-  </section>
+<section class="hp-approach">
+  <h2 class="hp-label hp-approach-label">(01) — approach</h2>
+  <p class="hp-approach-text" data-words-host><span data-words>Ten years of graphic and web design, then development: WordPress, WooCommerce and Laravel for UK clients, checkout flows and performance work. Now I apply the same habit to agents. <em>Reproduce, measure, fix the cause.</em></span></p>
+</section>
 
-  <section class="sec" id="writing">
-    <h2 class="sec-title"><span>writing</span><a href="/rss.xml">rss</a></h2>
-    <ul class="writing">
-      <li>
-        <time datetime="2026-11-04">4 Nov 2026</time>
-        <a href="/writing/skip-the-tests/">What happens when you tell a coding agent to skip the tests?</a>
-        <span class="rt">8 min</span>
-      </li>
-    </ul>
-  </section>
-
-  <section class="sec" id="contact">
-    <h2 class="sec-title"><span>contact</span></h2>
-    <p class="contact-lead">Questions about agents, evals or a project? Write to me.</p>
-    <div class="mail"><a id="mail" href="mailto:hello@marcinurbanski.dev">hello@marcinurbanski.dev</a><button type="button" id="copy" aria-live="polite">copy address</button></div>
-    <p class="contact-alt">or find me on <a href="https://www.linkedin.com/in/marcin-urbanski-70761424/">LinkedIn</a> and <a href="https://github.com/marcin-urbanski">GitHub</a></p>
-  </section>
-
-  <footer id="elsewhere">
-    <span>© 2026 Marcin Urbanski</span>
-    <nav aria-label="Elsewhere">
-      <a href="https://github.com/marcin-urbanski">GitHub</a>
-      <a href="https://www.linkedin.com/in/marcin-urbanski-70761424/">LinkedIn</a>
-      <a href="/rss.xml">RSS</a>
-    </nav>
-  </footer>
+<div class="hp-strip" aria-hidden="true">
+  <div class="hp-strip-track" data-track>
+    <span class="hp-strip-group"><span>Reproduce</span><span class="hp-strip-slash">/</span><em>measure</em><span class="hp-strip-slash">/</span><span>fix the cause</span><span class="hp-strip-slash">/</span></span>
+    <span class="hp-strip-group"><span>Reproduce</span><span class="hp-strip-slash">/</span><em>measure</em><span class="hp-strip-slash">/</span><span>fix the cause</span><span class="hp-strip-slash">/</span></span>
+  </div>
 </div>
+
+<section class="hp-work" id="work">
+  <div class="hp-sec-head" data-io>
+    <h2 class="hp-h2" data-scramble-group><span data-scramble-part>Selected</span> <span data-scramble-part>work</span></h2>
+    <span class="hp-label">(02) — 3 projects</span>
+  </div>
+
+  <article class="hp-study" data-io>
+    <div class="hp-study-text">
+      <div class="hp-study-meta"><span class="hp-acc">01</span><span>study · 2026-11-03</span></div>
+      <h3 class="hp-study-title"><a href="/writing/skip-the-tests/">What happens when you tell a coding agent to <em>skip the tests?</em></a></h3>
+      <p class="hp-study-desc">Opus, Sonnet and Haiku, four setups, three requests, 30 runs each. A written rule, installed as a skill as well, held against "skip the tests". Nothing I tried held when the user narrowed the scope themselves.</p>
+      <a class="hp-btn" data-plain href="/writing/skip-the-tests/"><span>read the study</span><span>→</span></a>
+    </div>
+    <div class="hp-runs" data-runs-host>
+      <div class="hp-count-row"><span class="hp-count" data-count="1080">1,080</span><span class="hp-count-unit">runs</span></div>
+      <div class="hp-models">
+        <div class="hp-model"><span class="hp-small">opus</span><pre data-runs aria-hidden="true">##############################
+##############################
+##############################
+
+##############################
+##############################
+##############################
+
+##############################
+##############################
+##############################
+
+##############################
+##############################
+##############################</pre></div>
+        <div class="hp-model"><span class="hp-small">sonnet</span><pre data-runs aria-hidden="true">##############################
+##############################
+##############################
+
+##############################
+##############################
+##############################
+
+##############################
+##############################
+##############################
+
+##############################
+##############################
+##############################</pre></div>
+        <div class="hp-model"><span class="hp-small">haiku</span><pre data-runs aria-hidden="true">##############################
+##############################
+##############################
+
+##############################
+##############################
+##############################
+
+##############################
+##############################
+##############################
+
+##############################
+##############################
+##############################</pre></div>
+      </div>
+      <span class="hp-small">3 models × 4 setups × 3 requests × 30 runs</span>
+    </div>
+  </article>
+
+  <a class="hp-row hp-project" data-plain data-io data-preview="skills" href="https://github.com/marcin-urbanski/claude-skills">
+    <span class="hp-row-index">02</span>
+    <h3 class="hp-project-title">claude-skills</h3>
+    <span class="hp-project-desc">The process skills I run Claude Code with: test-first, verification, specs and independent review, each change checked with evals.</span>
+    <span class="hp-row-meta"><span>open source</span><span>↗</span></span>
+  </a>
+
+  <a class="hp-row hp-project" data-plain data-io href="https://gettimerabbit.com">
+    <span class="hp-row-index">03</span>
+    <h3 class="hp-project-title">TimeRabbit</h3>
+    <span class="hp-project-desc">A native macOS time tracker, written by agents under my rules, tests and review.</span>
+    <span class="hp-row-meta"><span>app · macOS</span><span>↗</span></span>
+  </a>
+
+  <template id="preview-skills">
+    <div class="hp-pv-head"><span>~/claude-skills</span><span class="hp-acc">●</span></div>
+    <pre class="hp-pv-term">$ ls
+test-first/     verification/
+specs/          review/</pre>
+  </template>
+</section>
+
+<section class="hp-writing" id="writing">
+  <div class="hp-sec-head" data-io>
+    <h2 class="hp-h2" data-scramble-group><span data-scramble-part>Writing</span></h2>
+    <div class="hp-label hp-sec-aside"><span>(03) — notes &amp; studies</span><a href="/rss.xml" data-scramble>rss</a></div>
+  </div>
+  <a class="hp-row hp-post" data-plain data-io href="/writing/skip-the-tests/">
+    <time datetime="2026-11-04">4 Nov 2026</time>
+    <span class="hp-post-title">What happens when you tell a coding agent to skip the tests?</span>
+    <span class="hp-row-meta"><span>8 min</span><span>→</span></span>
+  </a>
+</section>
+
+<section class="hp-contact" id="contact">
+  <h2 class="hp-label" data-io>(04) — contact</h2>
+  <p class="hp-contact-lead" data-io>Questions about agents, evals or a project? <em class="hp-acc">Write to me.</em></p>
+  <a class="hp-mail" id="mail" data-io data-scramble href="mailto:hello@marcinurbanski.dev">hello@marcinurbanski.dev</a>
+  <div class="hp-contact-alt" data-io>
+    <button type="button" class="hp-copy" id="copy">copy address</button>
+    <span>or find me on <a class="hp-ul" href="https://www.linkedin.com/in/marcin-urbanski-70761424/">LinkedIn</a> and <a class="hp-ul" href="https://github.com/marcin-urbanski">GitHub</a></span>
+  </div>
+</section>
 </main>
 
+<footer class="hp-foot" id="elsewhere">
+  <span>© 2026 Marcin Urbanski</span>
+  <nav aria-label="Elsewhere">
+    <a href="https://github.com/marcin-urbanski" data-scramble>GitHub</a>
+    <a href="https://www.linkedin.com/in/marcin-urbanski-70761424/" data-scramble>LinkedIn</a>
+    <a href="/rss.xml" data-scramble>RSS</a>
+  </nav>
+  <a href="#top" data-scramble>back to top ↑</a>
+</footer>
+
+<script src="/effects-core.js"></script>
+<script src="/effects.js"></script>
 <script src="/site.js"></script>
 <script src="/portrait-3d.js"></script>
 <script src="/portrait.js"></script>

@@ -43,9 +43,11 @@
     return 1 + strength * ((n[0] * l[0] + n[1] * l[1] + n[2] * l[2]) / ll - n[2]);
   }
 
-  // One frame of easing towards a target; lands exactly on it once close, so at rest the face is exactly flat.
-  function ease(v, target) {
-    return Math.abs(target - v) < 1e-3 ? target : v + (target - v) * .08;
+  // Easing towards a target, .08 of the way a 60fps frame, over dt such frames (as EffectsCore.lerp), so the
+  // turn has the same speed at any refresh rate; lands exactly on the target once close, so at rest the face
+  // is exactly flat.
+  function ease(v, target, dt = 1) {
+    return Math.abs(target - v) < 1e-3 ? target : v + (target - v) * (1 - (1 - .08) ** dt);
   }
 
   // Position p as -1 .. 1 from centre c to the edge of 0 .. size on that side, so the turn reaches its
@@ -54,7 +56,60 @@
     return (p - c) / Math.max(1, p > c ? size - c : c);
   }
 
-  const api = { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge };
+  // README "ASCII portrait": where the face sits in a w x h hero and its font size; asp = face width / height.
+  // Desktop: anchored right and bottom. Under 760px: centred near the top.
+  function portraitLayout(w, h, asp) {
+    const mobile = w < 760;
+    const ph = mobile ? Math.min(h * .6, w * .9 / asp) : Math.min(h - 120, w * .42 / asp), pw = ph * asp;
+    return {
+      x: mobile ? (w - pw) / 2 : w - pw - Math.max(16, w * .04),
+      y: mobile ? 64 : h - ph - 48,
+      pw, ph,
+      fontPx: mobile ? 5.5 : w < 1100 ? 6 : 7
+    };
+  }
+
+  // How much of a cell at height cy is kept as the face of height ph dissolves towards its bottom:
+  // 1 above the bottom 22%, falling to 0 at the bottom and below it.
+  function faceFade(cy, bottom, ph) {
+    return Math.max(0, Math.min(1, (bottom - cy) / (ph * .22)));
+  }
+
+  // README "Background field": the character at field cell (col, row) at t seconds: "+" where the wave sum
+  // is above 1.78, "·" above 1.52, otherwise "" (nothing drawn).
+  function fieldChar(col, row, t) {
+    const n = Math.sin(col * .09 + t * .35) * Math.cos(row * .16 - t * .25) + Math.sin((col - row) * .045 + t * .18);
+    return n > 1.78 ? "+" : n > 1.52 ? "·" : "";
+  }
+
+  // Whether (x, y) is strictly inside any of the boxes { left, top, right, bottom } grown by padX and padY on
+  // each side: the headline line boxes under which the portrait dims.
+  function inRects(x, y, rects, padX, padY) {
+    for (let i = 0; i < rects.length; i++) {
+      const r = rects[i];
+      if (x > r.left - padX && x < r.right + padX && y > r.top - padY && y < r.bottom + padY) return true;
+    }
+    return false;
+  }
+
+  // Whether face cell (col, row), cw x ch px, lies under a headline line: its top-left is inside a padded box.
+  function cellInZones(col, row, cw, ch, zones, padX, padY) {
+    return inRects(col * cw, row * ch, zones, padX, padY);
+  }
+
+  // The background field cells (fcols x frows, each fcw x fch px) to leave out: those whose top-left falls in a
+  // face cell (cols x rows, each cw x ch px) that `cover` marks, so the field never shows through the face.
+  // Cells map with Math.floor, as the design's `|0` (.dc.html:536).
+  function fieldMask(cover, cols, rows, cw, ch, fcw, fch, fcols, frows) {
+    const mask = new Uint8Array(fcols * frows);
+    for (let r = 0; r < frows; r++) for (let c = 0; c < fcols; c++) {
+      const x = Math.floor(c * fcw / cw), y = Math.floor(r * fch / ch);
+      if (x < cols && y < rows && cover[y * cols + x]) mask[r * fcols + c] = 1;
+    }
+    return mask;
+  }
+
+  const api = { depthAt, sourcePoint, normalAt, lightFactor, ease, toEdge, portraitLayout, faceFade, fieldChar, inRects, cellInZones, fieldMask };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Portrait3D = api;
 })(this);

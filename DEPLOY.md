@@ -27,6 +27,9 @@ zone; don't add another mail provider's MX records next to them.
 ## Adding a post
 
 1. Copy `public/writing/skip-the-tests/index.html` to `public/writing/<slug>/index.html` and replace the article.
-2. Add it to the writing list in `public/index.html`, to `public/rss.xml` (newest item first, update `lastBuildDate`)
-   and to `public/sitemap.xml`.
-3. Check locally at 1280 px and 375 px: no sideways scroll, chart labels readable.
+2. In `public/index.html`, copy the `<a class="hp-row hp-post" …>` row in `<section class="hp-writing">` and put
+   the copy above the others (newest first). Change its `href`, the `<time>` (both `datetime` and the text), the
+   `.hp-post-title` and the reading time in `.hp-row-meta`; keep `data-plain` and `data-io`. Then add the post to
+   `public/rss.xml` (newest item first, update `lastBuildDate`) and to `public/sitemap.xml`.
+3. Before deploying, run `node --test tests/` and check locally at 1280 px and 375 px: no sideways scroll, chart
+   labels readable.
