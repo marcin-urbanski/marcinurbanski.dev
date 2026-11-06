@@ -93,3 +93,11 @@ test("each font token lists a metric-matched fallback right after its web font",
     }
   }
 });
+
+test("no @font-face lists a unicode-range entry twice", () => {
+  const css = fs.readFileSync(path.join(PUBLIC, "styles.css"), "utf8");
+  for (const [, range] of css.matchAll(/unicode-range: ([^;]+);/g)) {
+    const entries = range.split(/,\s*/);
+    assert.deepEqual(entries.filter((e, i) => entries.indexOf(e) !== i), [], range.slice(0, 40));
+  }
+});

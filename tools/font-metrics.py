@@ -4,14 +4,18 @@ While a web font in public/fonts/ loads, its text shows in a local system font. 
 font's width and line box keeps the text where it will be after the swap, so the page barely moves. For each
 fallback face this prints the four descriptors to paste into its @font-face:
 
-- size-adjust: the web font's average advance over the site's own copy (the visible text of the pages in public/,
-  with each font's pair kerning), divided by the local font's; for the monospace face, the advance of "M", since
-  every glyph has the same width. An average over the alphabet alone weights rare letters as much as "e" and "t",
+- size-adjust: the web font's average advance over the site's own copy set in that family (with each font's pair
+  kerning), divided by the local font's; for the monospace face, the advance of "M", since every glyph has the same
+  width. An average over the alphabet alone weights rare letters as much as "e" and "t",
   skips capitals and kerning, and left Arial about 6% wider than Geist on real paragraphs, enough to wrap a line;
 - ascent-override, descent-override, line-gap-override: the web font's hhea metrics over its unitsPerEm, divided
   by size-adjust (the browser scales the overrides by size-adjust too).
 
-The variable web fonts are measured at the weight the face stands in for. Needs fontTools and brotli (for woff2):
+The variable web fonts are measured at the weight the face stands in for. Newsreader is also measured at opsz 48:
+the browser sets the optical size to the font size (font-optical-sizing: auto), and the site's serif phrases run
+from 22px to 200px with most between 28px and 68px, where the default opsz 18 is several percent narrower than what
+renders. Against the rendered page, opsz 48 left the phrases within about 2.5% of Newsreader; opsz 72 made them 2-7%
+wider. Needs fontTools and brotli (for woff2):
 
     pip3 install --user fonttools brotli
     python3 tools/font-metrics.py
@@ -27,21 +31,31 @@ FONTS = Path(__file__).resolve().parent.parent / "public" / "fonts"
 SYSTEM = [Path("/System/Library/Fonts"), Path("/Library/Fonts"), Path("/System/Library/Fonts/Supplemental")]
 
 
+def visible(markup):
+    """Text of an HTML fragment, whitespace collapsed."""
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", markup)))
+
+
 def site_copy():
-    """The visible text of every page, whitespace collapsed."""
+    """The text of every page set in Geist: no scripts and styles, and no pre or code, which are in Geist Mono."""
     pages = FONTS.parent.glob("**/*.html")
-    text = " ".join(re.sub(r"<(script|style)[\s\S]*?</\1>|<[^>]+>", " ", p.read_text()) for p in pages)
-    return re.sub(r"\s+", " ", html.unescape(text))
+    return " ".join(visible(re.sub(r"<(script|style|pre|code)\b[\s\S]*?</\1>", " ", p.read_text())) for p in pages)
+
+
+def serif_copy():
+    """The phrases set in Newsreader: the serif is used only by .home-page em, so the <em>s of the home page."""
+    return " ".join(visible(m) for m in re.findall(r"<em\b[^>]*>([\s\S]*?)</em>", (FONTS.parent / "index.html").read_text()))
 
 
 COPY = site_copy()
-# (fallback face, web font file, weight it is measured at, local font file, sample text)
+# (fallback face, web font file, axes it is measured at, local font file, sample text)
 FACES = [
-    ("Geist Fallback 300 499", "geist-latin-v5.woff2", 400, "Arial.ttf", COPY),
-    ("Geist Fallback 500 700", "geist-latin-v5.woff2", 600, "Arial Bold.ttf", COPY),
+    ("Geist Fallback 300 499", "geist-latin-v5.woff2", {"wght": 400}, "Arial.ttf", COPY),
+    ("Geist Fallback 500 700", "geist-latin-v5.woff2", {"wght": 600}, "Arial Bold.ttf", COPY),
     # Menlo first; Courier New's "M" is within 0.3% of Menlo's, so one size-adjust suits both.
-    ("Geist Mono Fallback", "geist-mono-latin-v6.woff2", 400, "Menlo.ttc", "M"),
-    ("Newsreader Fallback (italic)", "newsreader-italic-latin-v26.woff2", 400, "Georgia Italic.ttf", COPY),
+    ("Geist Mono Fallback", "geist-mono-latin-v6.woff2", {"wght": 400}, "Menlo.ttc", "M"),
+    ("Newsreader Fallback (italic)", "newsreader-italic-latin-v26.woff2", {"wght": 400, "opsz": 48}, "Georgia Italic.ttf",
+     serif_copy()),
 ]
 
 
@@ -106,8 +120,8 @@ def overrides(web, local, text):
 
 
 def main():
-    for face, web_file, weight, local_file, text in FACES:
-        web = instantiateVariableFont(TTFont(FONTS / web_file), {"wght": weight})
+    for face, web_file, axes, local_file, text in FACES:
+        web = instantiateVariableFont(TTFont(FONTS / web_file), axes)
         values = overrides(web, system_font(local_file), text)
         print(f"/* {face}: {local_file} */")
         print(" ".join(f"{k}: {v * 100:.2f}%;" for k, v in values.items()))
