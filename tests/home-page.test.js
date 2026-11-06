@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { runsFrame } = require("../public/effects-core.js");
+const { fnSource, jsonLd } = require("./helpers.js");
 const study = require("../public/study-runs.json");
 const MODELS = ["opus", "sonnet", "haiku"];
 
@@ -27,7 +28,7 @@ test("the hero keeps the hooks portrait.js looks up", () => {
   const hero = tag(/<section [^>]*>/g).find(t => /class="[^"]*\bhero\b/.test(t));
   assert.ok(hero, "a section with class hero");
   assert.match(hero, /id="top"/);
-  assert.match(html, /<canvas id="face" aria-hidden="true"><\/canvas>/);
+  assert.match(html, /<canvas id="face" aria-hidden="true" data-src="\/portrait-data\.json\?v=[0-9a-f]{8}"><\/canvas>/);
   assert.match(html, /<canvas id="bubbles" aria-hidden="true"><\/canvas>/);
 });
 
@@ -78,10 +79,43 @@ test("every body sentence of the home page is in the markup", () => {
 
 test("sections use the design's headings and labels", () => {
   const h2s = [...html.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map(m => text(m[1]).trim());
-  assert.deepEqual(h2s, ["(01) — about", "Selected work", "Writing", "(04) — contact"]);
+  assert.deepEqual(h2s, ["About", "Selected work", "Writing", "A project, a role, or just a question? Write to me."]);
   for (const s of ["(01) — about", "(02) — 3 projects", "(03) — notes & studies", "back to top ↑"]) {
     assert.ok(bodyText.includes(s), s);
   }
+});
+
+// Spec AC 12: no "(0X) — …" label is a heading. About's heading is visually hidden and its label is hidden from
+// screen readers, so they read "About" once; Contact's heading is the question the section asks.
+test("the About heading is visually hidden and its label is a paragraph screen readers skip", () => {
+  assert.match(html, /<h2 class="hp-sr">About<\/h2>\s*<p class="hp-label hp-approach-label" aria-hidden="true">\(01\) — about<\/p>/);
+});
+
+test("the contact label is a paragraph and the contact lead is the section's heading, in the lead's weight", () => {
+  assert.match(html, /<p class="hp-label" data-io>\(04\) — contact<\/p>\s*<h2 class="hp-contact-lead" data-io>/);
+  assert.match(css, /\.home-page \.hp-contact-lead \{[^}]*font-weight: 400;/);
+});
+
+test("the visually hidden class is a plain rule, usable outside the home page", () => {
+  assert.match(css, /\n\.hp-sr \{ position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset\(50%\); white-space: nowrap; \}/);
+  assert.doesNotMatch(css, /\.home-page \.hp-sr/);
+});
+
+// Spec AC 14: off screen until focused, then at the top left over the cursor (80) and the loader (90).
+test("the skip link stays off screen until focused, then shows at the top left above the loader", () => {
+  const rule = cssRule(".skip");
+  assert.match(rule, /position: fixed;/);
+  assert.match(rule, /left: 12px; top: -100px;/);
+  assert.match(rule, /background: var\(--bg\); color: var\(--ink\);/);
+  assert.match(rule, /font: 400 13px\/normal var\(--mono\);/);
+  assert.match(rule, /min-height: 44px;/);
+  assert.ok(Number(rule.match(/z-index: (\d+)/)[1]) > 90, "z-index above the loader's 90");
+  assert.match(cssRule(".skip:focus"), /top: 12px;/);
+  assert.match(cssRule("main:focus"), /outline: none;/);
+});
+
+test("the header's home link marks the home page as the current page", () => {
+  assert.match(html, /<header class="hp-head">\s*<a href="#top" data-scramble aria-current="page">marcinurbanski\.dev<\/a>/);
 });
 
 test("the writing row keeps its machine-readable date", () => {
@@ -103,6 +137,43 @@ test("the runs grids have a legend: # held · x broke, the x in the red token", 
   assert.ok(bodyText.includes("# held · x broke"));
   assert.match(html, /# held · <span class="hp-run-broke">x<\/span> broke/);
   assert.match(css, /\.home-page \.hp-run-broke \{ color: var\(--red\); \}/);
+});
+
+// Spec AC 13: the runs block is a figure; its caption says in words what the grids show, so it reads without JS
+// and to a screen reader, while the counter and the legend, which only make sense next to the grids, are hidden.
+test("the runs block is a figure with its caption as figcaption, the counter and legend hidden from assistive tech", () => {
+  const fig = html.match(/<figure class="hp-runs" data-runs-host>([\s\S]*?)<\/figure>/);
+  assert.ok(fig, "figure.hp-runs[data-runs-host]");
+  assert.match(fig[1], /<div class="hp-count-row" aria-hidden="true"><span class="hp-count" data-count="1080">1,080<\/span>/);
+  assert.match(fig[1], /<figcaption class="hp-runs-caption hp-small">[\s\S]*<\/figcaption>\s*$/);
+  assert.match(fig[1], /<span aria-hidden="true"># held · <span class="hp-run-broke">x<\/span> broke<\/span><\/figcaption>/);
+  assert.equal([...fig[1].matchAll(/data-runs="/g)].length, 3);
+  assert.match(css, /\.home-page \.hp-runs \{ margin: 0; /);
+});
+
+// The model labels name grids a screen reader skips, so read alone they say nothing; the figcaption names each model.
+test("the runs grids and their model labels are hidden from assistive tech as one block", () => {
+  const fig = html.match(/<figure class="hp-runs" data-runs-host>([\s\S]*?)<\/figure>/);
+  assert.ok(fig, "figure.hp-runs[data-runs-host]");
+  const models = fig[1].match(/<div class="hp-models"[^>]*>/);
+  assert.equal(models && models[0], '<div class="hp-models" aria-hidden="true">');
+  assert.equal([...fig[1].matchAll(/<span class="hp-small">(opus|sonnet|haiku)<\/span>/g)].length, 3);
+});
+
+// The sentence tools/study-runs.py prints, recounted here from study-runs.json.
+test("the figcaption's summary matches study-runs.json overall, per model and per request", () => {
+  const held = row => row.split("1").length - 1;
+  const sum = rows => rows.reduce((n, row) => n + held(row), 0);
+  const all = MODELS.flatMap(m => study.runs[m]);
+  const byRequest = [0, 1, 2].map(q => sum(all.filter((_, r) => r % 3 === q)));
+  const [opus, sonnet, haiku] = MODELS.map(m => sum(study.runs[m]));
+  const expected = `The rule held in ${sum(all).toLocaleString("en-US")} of 1,080 runs. ` +
+    `By model: Opus ${opus}, Sonnet ${sonnet}, Haiku ${haiku} of 360. ` +
+    `By request: no pressure ${byRequest[0]}, hotfix ${byRequest[1]}, narrowed scope ${byRequest[2]} of 360.`;
+  const caption = html.match(/<figcaption[^>]*>([\s\S]*?)<\/figcaption>/);
+  assert.ok(caption, "a figcaption");
+  assert.match(caption[1], new RegExp(`<span class="hp-sr">${expected.replace(/[.]/g, "\\.")}</span>`));
+  assert.ok(bodyText.includes(expected));
 });
 
 test("effects.js draws the grids from study-runs.json", () => {
@@ -342,6 +413,30 @@ test("no rule outside the motion start states hides content", () => {
   }
 });
 
+// The body of the one top-level rule for `sel`.
+const cssRule = sel => {
+  const m = css.match(new RegExp("\\n" + sel.replace(/\./g, "\\.") + " \\{([^}]*)\\}"));
+  assert.ok(m, sel);
+  return m[1];
+};
+
+// Spec AC 9: the number's box comes from the layout, never from its digits, so neither it nor the bar moves as
+// the count changes. Wide, it keeps the room of the widest count ("000" is 1.86em of Geist) with its digits
+// at the right; below 415px, where "100" did not fit beside the bar, it always has a line of its own.
+test("the loader number's box does not change with its digits (spec AC 9)", () => {
+  assert.doesNotMatch(cssRule(".home-page .hp-loader-foot"), /flex-wrap/);
+  assert.match(cssRule(".home-page .hp-loader-num"), /flex: 0 1 1\.86em; min-width: 0; display: flex; justify-content: flex-end;/);
+  const block = css.match(/@media \(max-width: 414px\) \{([^@]*?)\n\}/);
+  assert.ok(block, "a max-width: 414px block");
+  assert.match(block[1], /\.home-page \.hp-loader-foot \{ flex-wrap: wrap; \}/);
+  assert.match(block[1], /\.home-page \.hp-loader-num \{ flex-basis: 100%; justify-content: flex-start; \}/);
+});
+
+// Spec AC 9: the first tick fills in eight mono characters (HH:MM:SS), so they have their room before it.
+test("the header clock keeps room for HH:MM:SS before its first tick", () => {
+  assert.match(cssRule(".home-page .hp-clock-time"), /min-width: 8ch;/);
+});
+
 test("reveal on scroll waits until 12% of the element is in view, as playOnce does", () => {
   const js = fs.readFileSync(path.join(__dirname, "../public/effects.js"), "utf8");
   const reveal = js.slice(js.indexOf("function setupReveal"), js.indexOf("function setupLitText"));
@@ -372,6 +467,112 @@ test("the portrait draws in the --mono font (Geist Mono) and runs in the page lo
   assert.match(js, /SiteLoop\.whileVisible\(face,/);
 });
 
+// Spec AC 10: the face's grids are their own asset, fetched after the first paint, not inlined in the script.
+test("portrait-data.json holds the 320x393 brightness grid and the 160x197 depth grid", () => {
+  const { lum, depth } = require("../public/portrait-data.json");
+  assert.deepEqual([lum.w, lum.h, depth.w, depth.h, depth.scale], [320, 393, 160, 197, 2]);
+  assert.equal(Buffer.from(lum.b64, "base64").length, 125760);
+  assert.equal(Buffer.from(depth.b64, "base64").length, 31520);
+});
+
+// The depth grid's base64 string is ~42 KB; once decoded, the script should not keep it alive.
+test("portrait.js keeps only the decoded depth grid and its sizes", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  assert.match(js, /DEPTH = \{ w: depth\.w, h: depth\.h, scale: depth\.scale, data: d \}/);
+});
+
+test("portrait.js holds no data and is under 22,000 bytes", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  assert.doesNotMatch(js, /atob\(/);
+  assert.doesNotMatch(js, /[A-Za-z0-9+/]{200}/, "a base64 run");
+  assert.ok(Buffer.byteLength(js) < 22000, Buffer.byteLength(js) + " bytes");
+  assert.match(js, /fetch\(face\.dataset\.src\)/);
+});
+
+test("the portrait's frame functions read no layout (spec AC 5)", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  for (const name of ["drawFace", "step", "update3d"]) {
+    assert.doesNotMatch(fnSource(js, name), /getBoundingClientRect|getClientRects|scroll[XY]\b|inner(Width|Height)|client(Width|Height)|scrollHeight/, name);
+  }
+});
+
+// The headline lines may start sliding in before or after the first measure; either way they are followed.
+test("the portrait follows the hero reveal from its transitionrun and from every measure", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  assert.match(js, /\n  heroText\.addEventListener\("transitionrun", followReveal\);/);
+  assert.match(fnSource(js, "measureCover"), /\n    measureZones\(\);\n    followReveal\(\);\n  \}$/);
+});
+
+test("the portrait measures the headline lines in the loop's read phase while the reveal runs", () => {
+  const follow = fnSource(fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8"), "followReveal");
+  assert.match(follow, /const wait = revealWait = \{\};\n    window\.SiteLoop\.addRead\(measureZones\);/);
+});
+
+// Only the newest reveal's wait ends the reading; it then measures once more, with every line at rest.
+test("the portrait stops reading and measures the headline once more when the newest reveal settles", () => {
+  const follow = fnSource(fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8"), "followReveal");
+  assert.match(follow, /Promise\.allSettled\(anims\.map\(a => a\.finished\)\)\.then\(\(\) => \{\n *if \(revealWait !== wait\) return;\n *revealWait = null;\n *window\.SiteLoop\.removeRead\(measureZones\);\n *measureZones\(\);\n *\}\);/);
+});
+
+// Spec AC 2: the grids are fetched, and so the face measured, only from the after-paint callback.
+test("the portrait starts after the first paint", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  assert.match(js, /const core = window\.EffectsCore;/);
+  assert.match(js, /\n  const afterPaint = fn => core \? core\.afterPaint\(fn, window\) : setTimeout\(fn, 0\);/);
+  assert.match(js, /\n  afterPaint\(\(\) => loadGrids\(\)\.then\(\(\) => firstMeasure\(whenIdle\), e => console\.error\(e\)\)\);/);
+  assert.equal(js.match(/loadGrids\(\)/g).length, 1, "loadGrids() is called only there");
+});
+
+// Spec AC 2: a resize or the font arriving during the first measure restarts it, so it never mixes two sizes.
+test("a resize before the first measure has finished starts it again", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  const resize = js.slice(js.indexOf('window.addEventListener("resize"'), js.indexOf('window.addEventListener("scroll"'));
+  assert.match(resize, /rt = setTimeout\(\(\) => \{\n *if \(!ready\) \{ stale = true; return; \}/);
+  const font = js.slice(js.indexOf("document.fonts.load("));
+  assert.match(font, /if \(ready\) \{ measure\(\); drawFace\(0\); \} else if \(cw\) stale = true;/);
+  const first = fnSource(js, "firstMeasure");
+  assert.match(first, /\{\n *stale = false;\n *const steps = measureSteps\(\);/);
+  assert.match(first, /steps\.shift\(\)\(\);\n *if \(stale\) return firstMeasure\(whenIdle\);\n *if \(steps\.length\) return whenIdle\(doStep\);\n *ready = true;\n *run\(\);/);
+});
+
+// Spec AC 1: while the loader covers the page neither canvas is drawn; the bubbles still move and the face keeps
+// turning, so both are as they should be when it lifts.
+test("while the loader covers the page the portrait moves but draws nothing", () => {
+  const run = fnSource(fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8"), "run");
+  assert.match(run, /window\.SiteLoop\.add\(\(dt, now\) => step\(now \/ 1000, dt \/ 60, !covered\(\)\)\);/);
+  assert.match(run, /window\.SiteLoop\.whileVisible\(face, \(dt, now\) => \{\n *if \(covered\(\)\) update3d\(now \/ 1000, dt, false\); else drawFace\(now \/ 1000, dt\);\n *\}\);/);
+});
+
+// Spec AC 1: the turned face is recomputed only when its quantised turn or light changes, and only inside faceBox.
+test("the portrait recomputes the turned face only when its quantised key changes, inside faceBox", () => {
+  const update = fnSource(fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8"), "update3d");
+  assert.match(update, /if \(!build\) return;\n *const key = turnKey\(yaw, pitch, lx, ly, ANGLE_STEP, LIGHT_STEP\);\n *if \(key === built\) return;\n *built = key;\n *const q = v => quantise\(v, ANGLE_STEP\), ql = v => quantise\(v, LIGHT_STEP\);\n *computeBase\(q\(yaw\), q\(pitch\), \[ql\(lx\), ql\(ly\), 1\], faceBox\);\n *\}$/);
+});
+
+// Spec AC 4: fewer bubbles on phones with few cores (bubbleCount, tests/portrait-3d.test.js).
+test("the portrait sizes the bubble stream by the page, the width and the CPU cores", () => {
+  const spawn = fnSource(fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8"), "spawnAll");
+  assert.match(spawn, /const steady = bubbleCount\(docH, VW, navigator\.hardwareConcurrency\);/);
+});
+
+test("under reduced motion the face is drawn once, not again on every scroll", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  assert.doesNotMatch(js, /if \(still\) window\.addEventListener\("scroll"/);
+});
+
+// Without effects.js the head script drops html.motion after 4s and the headline lines jump into place.
+test("without the page loop the portrait measures the headline again once html.motion is dropped", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  assert.match(js, /if \(still && root\.classList\.contains\("motion"\)\) new MutationObserver\(/);
+  assert.match(js, /\.observe\(root, \{ attributeFilter: \["class"\] \}\)/);
+});
+
+test("window.SiteLoop exposes the loop's read phase", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/effects.js"), "utf8");
+  assert.match(js, /addRead: loop\.addRead,/);
+  assert.match(js, /removeRead: loop\.removeRead,/);
+});
+
 test("on desktop the hero sentence stops before the face, which starts at 54% of the width", () => {
   const block = css.match(/@media \(min-width: 760px\) \{([^@]*?)\n\}/);
   assert.ok(block, "a min-width: 760px block");
@@ -390,4 +591,86 @@ test("the meta and og descriptions repeat the hero headline and subline", () => 
     "with AI agents, testing what actually makes them reliable.";
   assert.ok(html.includes(`<meta name="description" content="${hero}">`), "meta description");
   assert.ok(html.includes(`<meta property="og:description" content="${hero}">`), "og:description");
+});
+
+// Spec AC 7: no script holds up the parser; the head preloader is the one inline script. JSON-LD is data, not code:
+// it is allowed only with exactly that type and only when its body parses as JSON.
+test("every script with a src is deferred and the only other script is the home page's head preloader", () => {
+  const { htmlFiles } = require("../tools/asset-versions.js");
+  const root = path.join(__dirname, "../public");
+  for (const page of htmlFiles(root)) {
+    const name = path.relative(root, page), inline = [];
+    for (const [, attrs, body] of fs.readFileSync(page, "utf8").matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+      if (/\ssrc=/.test(attrs)) assert.match(attrs, /\sdefer\b/, name + ": <script" + attrs + ">");
+      else if (attrs === ' type="application/ld+json"') JSON.parse(body);
+      else inline.push(body);
+    }
+    assert.deepEqual(inline, name === "index.html" ? [headScript] : [], name);
+  }
+});
+
+const effectsJs = fs.readFileSync(path.join(__dirname, "../public/effects.js"), "utf8");
+const effectsFn = name => fnSource(effectsJs, name);
+
+// Spec AC 2: the loader, intro and one-shots keep their timing; the rest waits until the page has painted.
+test("effects.js sets up the clock, cursor, preview panel and hover scramble after the first paint", () => {
+  const setup = effectsJs.slice(effectsJs.indexOf("window.SiteEffects = { scramble };"), effectsJs.indexOf('root.dataset.fx = "on"'));
+  for (const fn of ["setupClock", "setupCursor", "setupPreview", "setupScramble"]) {
+    assert.doesNotMatch(setup, new RegExp(fn + "\\(\\)"), fn + " called directly");
+    assert.match(setup, new RegExp("core\\.afterPaint\\([^\\n]*\\b" + fn + "\\b"), fn);
+  }
+  assert.match(effectsJs, /\n    root\.dataset\.fx = "on";/);
+});
+
+// Spec AC 3: the clock stops while the tab is hidden and catches up at once when it returns. tickWhileShown does
+// that (tests/effects-core.test.js); the clock runs only through it.
+test("the header clock stops while the tab is hidden and ticks at once when it is shown again", () => {
+  const clock = effectsFn("setupClock");
+  assert.match(clock, /core\.tickWhileShown\(tick, 1000, document, window\);/);
+  assert.doesNotMatch(clock, /setInterval|visibilitychange/);
+});
+
+// Spec AC 6 (as amended): under reduced motion the cursor and the panel follow the pointer from its own events.
+test("without motion the cursor and the preview panel never run in the frame loop", () => {
+  for (const name of ["setupCursor", "setupPreview"]) {
+    const adds = effectsFn(name).split("\n").filter(line => line.includes("loop.add("));
+    assert.ok(adds.length, name);
+    for (const line of adds) assert.match(line, /if \(motion\(\)\) loop\.add\(/, name + ": " + line.trim());
+  }
+});
+
+// Spec AC 5: every frame callback in effects.js (each `const step`, and the strip's) takes sizes and the scroll
+// position from variables kept by listeners, never from layout.
+test("effects.js frame callbacks read no layout (spec AC 5)", () => {
+  const frames = [...effectsJs.matchAll(/\n( *)const step = [^\n]*=> \{[\s\S]*?\n\1\};/g)].map(m => m[0]);
+  const strip = effectsFn("setupStrip");
+  frames.push(strip.slice(strip.indexOf("window.SiteLoop.whileVisible(")));
+  assert.ok(frames.length >= 6, frames.length + " frame callbacks");
+  for (const body of frames) {
+    assert.doesNotMatch(body, /getBoundingClientRect|getClientRects|scroll[XY]\b|inner(Width|Height)|client(Width|Height)|scroll(Height|Width)/, body);
+  }
+});
+
+test("the lit text measures its place on start, on resize and once the fonts have loaded", () => {
+  const lit = effectsFn("setupLitText");
+  assert.match(lit, /window\.addEventListener\("scroll", [^\n]*\{ passive: true \}\)/);
+  assert.match(lit, /window\.addEventListener\("resize", measure\)/);
+  assert.match(lit, /document\.fonts\.ready\.then\(measure\)/);
+});
+
+// Spec AC 19: the home page says who Marcin is, with the profiles the page itself links.
+test("the home page's JSON-LD Person matches the page and comes after the head preloader", () => {
+  const ld = jsonLd(html);
+  assert.ok(html.indexOf('<script type="application/ld+json">') > html.indexOf(headScript), "after the preloader");
+  assert.deepEqual(ld, {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "@id": "https://marcinurbanski.dev/#person",
+    name: "Marcin Urbanski",
+    url: html.match(/<link rel="canonical" href="([^"]*)">/)[1],
+    jobTitle: "Senior web developer",
+    image: html.match(/<meta property="og:image" content="([^"]*)">/)[1],
+    sameAs: ["https://github.com/marcin-urbanski", "https://www.linkedin.com/in/marcin-urbanski-70761424/"]
+  });
+  for (const url of ld.sameAs) assert.ok(html.includes(`href="${url}"`), url);
 });

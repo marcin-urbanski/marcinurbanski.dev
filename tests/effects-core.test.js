@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const {
   scrambleText, easeOutCubic, easeOutQuart, easeInOutQuad, loaderState, formatCount, countFrame, runsFrame,
   litPercent, londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, decayVelocityMs, frameDt,
-  createLoop, loaderKey, inView, COUNT_MS, RUNS_MS
+  createLoop, afterPaint, whenIdle, tickWhileShown, loaderKey, inView, COUNT_MS, RUNS_MS
 } = require("../public/effects-core.js");
 
 const near = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
@@ -441,6 +441,175 @@ test("createLoop ignores a callback added again after it threw", () => {
   frames.tick(16);
   assert.equal(calls, 1);
   assert.deepEqual(errors, ["boom"]);
+});
+
+test("createLoop runs read callbacks before the other callbacks in a frame", () => {
+  const frames = fakeFrames(), order = [];
+  const loop = createLoop(frames.request, () => {});
+  loop.add(() => order.push("write"));
+  loop.addRead(() => order.push("read"));
+  frames.tick(0);
+  assert.deepEqual(order, ["read", "write"]);
+});
+
+test("createLoop passes dt and the time to read callbacks", () => {
+  const frames = fakeFrames(), calls = [];
+  const loop = createLoop(frames.request, () => {});
+  loop.addRead((dt, now) => calls.push([dt, now]));
+  frames.tick(500);
+  assert.deepEqual(calls, [[1, 500]]);
+});
+
+test("createLoop stops calling a read callback once it is removed", () => {
+  const frames = fakeFrames(), read = () => { reads++; };
+  let reads = 0;
+  const loop = createLoop(frames.request, () => {});
+  loop.add(() => {});
+  loop.addRead(read);
+  frames.tick(0);
+  loop.removeRead(read);
+  frames.tick(16);
+  assert.equal(reads, 1);
+});
+
+test("createLoop stops asking for frames when its last read callback is removed", () => {
+  const frames = fakeFrames(), read = () => {};
+  const loop = createLoop(frames.request, () => {});
+  loop.addRead(read);
+  assert.ok(frames.pending);
+  frames.tick(0);
+  loop.removeRead(read);
+  frames.tick(16);
+  assert.equal(frames.pending, false);
+});
+
+test("createLoop drops a read callback that throws, reports it once and keeps the others running", () => {
+  const frames = fakeFrames(), errors = [];
+  let reads = 0, writes = 0;
+  const bad = () => { reads++; throw new Error("boom"); };
+  const loop = createLoop(frames.request, e => errors.push(e.message));
+  loop.addRead(bad);
+  loop.add(() => { writes++; });
+  frames.tick(0);
+  loop.addRead(bad);
+  frames.tick(16);
+  assert.equal(reads, 1);
+  assert.equal(writes, 2);
+  assert.deepEqual(errors, ["boom"]);
+});
+
+// A fake window for afterPaint: frames and idle callbacks run when the test says, timers are recorded.
+function fakeWindow(idle) {
+  const log = [];
+  let frame = null, idleFn = null;
+  const win = {
+    requestAnimationFrame: fn => { log.push("frame"); frame = fn; },
+    setTimeout: (fn, ms) => { log.push(["timeout", ms]); idleFn = fn; }
+  };
+  if (idle) win.requestIdleCallback = (fn, opts) => { log.push(["idle", opts]); idleFn = fn; };
+  return { win, log, frame: () => frame(0), idle: deadline => idleFn(deadline) };
+}
+
+test("afterPaint waits for a frame, then for an idle callback with a 1s timeout", () => {
+  const w = fakeWindow(true);
+  let ran = 0;
+  afterPaint(() => { ran++; }, w.win);
+  assert.deepEqual(w.log, ["frame"]);
+  w.frame();
+  assert.deepEqual(w.log, ["frame", ["idle", { timeout: 1000 }]]);
+  assert.equal(ran, 0);
+  w.idle({});
+  assert.equal(ran, 1);
+});
+
+test("afterPaint passes the idle deadline on to the callback", () => {
+  const w = fakeWindow(true), deadline = { timeRemaining: () => 10 };
+  let got;
+  afterPaint(d => { got = d; }, w.win);
+  w.frame();
+  w.idle(deadline);
+  assert.equal(got, deadline);
+});
+
+test("afterPaint falls back to a 200ms timer after the frame without requestIdleCallback", () => {
+  const w = fakeWindow(false);
+  let ran = 0;
+  afterPaint(() => { ran++; }, w.win);
+  w.frame();
+  assert.deepEqual(w.log, ["frame", ["timeout", 200]]);
+  assert.equal(ran, 0);
+  w.idle();
+  assert.equal(ran, 1);
+});
+
+// A fake tab for tickWhileShown: `show(hidden)` flips document.hidden and fires visibilitychange; ticks and
+// timer calls go to one log, in order.
+function fakeTab(hidden) {
+  const log = [];
+  let onChange = null, ids = 0;
+  const doc = {
+    hidden,
+    addEventListener: (type, fn) => { if (type === "visibilitychange") onChange = fn; }
+  };
+  const win = {
+    setInterval: (fn, ms) => { ids++; log.push(["start", ids, ms]); return ids; },
+    clearInterval: id => log.push(["stop", id])
+  };
+  return { doc, win, log, tick: () => log.push("tick"), show: h => { doc.hidden = h; onChange(); } };
+}
+
+test("tickWhileShown ticks at once and starts the interval on a shown tab", () => {
+  const t = fakeTab(false);
+  tickWhileShown(t.tick, 1000, t.doc, t.win);
+  assert.deepEqual(t.log, ["tick", ["start", 1, 1000]]);
+});
+
+test("tickWhileShown neither ticks nor starts the interval on a hidden tab", () => {
+  const t = fakeTab(true);
+  tickWhileShown(t.tick, 1000, t.doc, t.win);
+  assert.deepEqual(t.log, []);
+});
+
+test("tickWhileShown stops the interval when the tab is hidden", () => {
+  const t = fakeTab(false);
+  tickWhileShown(t.tick, 1000, t.doc, t.win);
+  t.log.length = 0;
+  t.show(true);
+  assert.deepEqual(t.log, [["stop", 1]]);
+});
+
+test("tickWhileShown ticks at once and restarts the interval when the tab is shown again", () => {
+  const t = fakeTab(false);
+  tickWhileShown(t.tick, 1000, t.doc, t.win);
+  t.show(true);
+  t.log.length = 0;
+  t.show(false);
+  assert.deepEqual(t.log, [["stop", 1], "tick", ["start", 2, 1000]]);
+});
+
+test("tickWhileShown starts on the first show of a tab opened hidden", () => {
+  const t = fakeTab(true);
+  tickWhileShown(t.tick, 1000, t.doc, t.win);
+  t.show(false);
+  assert.deepEqual(t.log.filter(e => !(e[0] === "stop" && e[1] === 0)), ["tick", ["start", 1, 1000]]);
+});
+
+test("whenIdle runs the callback from an idle callback with a 1s timeout, without waiting for a frame", () => {
+  const w = fakeWindow(true);
+  let ran = 0;
+  whenIdle(() => { ran++; }, w.win);
+  assert.deepEqual(w.log, [["idle", { timeout: 1000 }]]);
+  w.idle({});
+  assert.equal(ran, 1);
+});
+
+test("whenIdle falls back to a 0ms timer without requestIdleCallback", () => {
+  const w = fakeWindow(false);
+  let ran = 0;
+  whenIdle(() => { ran++; }, w.win);
+  assert.deepEqual(w.log, [["timeout", 0]]);
+  w.idle();
+  assert.equal(ran, 1);
 });
 
 test("loaderKey closes the loader on an ordinary key", () => {

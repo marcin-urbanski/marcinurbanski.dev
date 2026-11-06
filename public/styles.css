@@ -1,5 +1,17 @@
 /* Layout: one scroll. Text on the left; Marcin's face in ASCII at the top right.
    Characters rise from the bottom of the page like air bubbles in water and settle into the face. Dark only by choice. */
+/* Fonts: the variable woff2 subsets Google Fonts serves for this site, self-hosted (licence in fonts/OFL.txt),
+   with Google's weight ranges and unicode-ranges. Geist's latin-ext file carries the post's "ł". Each family is
+   followed in its token by a local fallback scaled to its metrics (numbers from tools/font-metrics.py), so the text
+   barely moves when the web font arrives; glyphs outside the ranges (→ ↗ ●) fall through to the rest of the stack. */
+@font-face { font-family: "Geist"; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/geist-latin-ext-v5.woff2) format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Geist"; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/geist-latin-v5.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Geist Mono"; font-style: normal; font-weight: 300 500; font-display: swap; src: url(/fonts/geist-mono-latin-v6.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Newsreader"; font-style: italic; font-weight: 300 500; font-display: swap; src: url(/fonts/newsreader-italic-latin-v26.woff2) format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Geist Fallback"; font-style: normal; font-weight: 300 499; src: local("Arial"); size-adjust: 102.97%; ascent-override: 97.60%; descent-override: 28.65%; line-gap-override: 0.00%; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD, U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Geist Fallback"; font-style: normal; font-weight: 500 700; src: local("Arial Bold"); size-adjust: 99.90%; ascent-override: 100.60%; descent-override: 29.53%; line-gap-override: 0.00%; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD, U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Geist Mono Fallback"; font-style: normal; font-weight: 300 500; src: local("Menlo Regular"), local("Courier New"); size-adjust: 99.66%; ascent-override: 100.84%; descent-override: 29.60%; line-gap-override: 0.00%; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Newsreader Fallback"; font-style: italic; font-weight: 300 500; src: local("Georgia Italic"); size-adjust: 86.29%; ascent-override: 85.18%; descent-override: 30.71%; line-gap-override: 0.00%; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 :root {
   color-scheme: dark;
   --bg: #0a0a09;
@@ -14,9 +26,9 @@
   --line-2: #2c2c28;
   --acc: #ecebe6;
   --red: #ff4d3d;          /* the site's one colour: a broken rule in the runs grids, 6:1 on --bg */
-  --display: "Geist", "Helvetica Neue", Arial, sans-serif;
-  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --serif: "Newsreader", Georgia, serif;
+  --display: "Geist", "Geist Fallback", "Helvetica Neue", Arial, sans-serif;
+  --mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, "SF Mono", Menlo, monospace;
+  --serif: "Newsreader", "Newsreader Fallback", Georgia, serif;
   --type-display: clamp(52px, 7.6vw, 176px);   /* the hero headline and the section headings */
   --ease: cubic-bezier(.16, 1, .3, 1);
   --ease-wipe: cubic-bezier(.76, 0, .24, 1);
@@ -32,6 +44,15 @@ body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-in
 a { color: var(--ink); text-underline-offset: 4px; text-decoration-color: var(--ascii-dim); }
 a:hover { text-decoration-color: var(--ink); }
 a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+/* Visually hidden, still read and selectable: the home page's About heading, site.js's live region and the address
+   it selects as a fallback */
+.hp-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* Skip link, first in every page's body: off screen until focused, then at the top left above the custom cursor (80)
+   and the loader (90). Its focus ring is the global a:focus-visible outline above, so no .skip rule sets one.
+   <main id="main" tabindex="-1"> takes the focus without drawing a ring round the page. */
+.skip { position: fixed; left: 12px; top: -100px; z-index: 100; display: flex; align-items: center; min-height: 44px; padding: 0 16px; background: var(--bg); color: var(--ink); font: 400 13px/normal var(--mono); text-decoration: none; }
+.skip:focus { top: 12px; }
+main:focus { outline: none; }
 
 #bubbles { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
 #face { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
@@ -127,7 +148,8 @@ html:has(> body.home-page) { scroll-behavior: smooth; }
 .home-page .hp-head a { pointer-events: auto; padding: 6px 0; }
 .home-page .hp-head nav { display: flex; gap: 24px; }
 .home-page .hp-clock { display: flex; gap: 10px; color: var(--muted-2); }
-.home-page .hp-clock-time { color: var(--ink); font-variant-numeric: tabular-nums; }
+/* Room for HH:MM:SS before the first tick, which comes after paint (spec AC 9) */
+.home-page .hp-clock-time { min-width: 8ch; color: var(--ink); font-variant-numeric: tabular-nums; }
 
 /* 2 Hero: text sits over the portrait canvas, bottom-aligned */
 .home-page .hero { position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; padding: 120px var(--home-gutter-r) 24px var(--home-gutter-l); overflow: hidden; }
@@ -175,7 +197,7 @@ html.motion .home-page [data-words].is-lit {
 .home-page .hp-study-title { margin: 0; font: 400 clamp(34px, 4.2vw, 68px)/1 var(--display); letter-spacing: -.035em; text-wrap: balance; }
 .home-page .hp-study-desc { margin: 0; max-width: 32em; font-size: 18px; line-height: 1.55; color: var(--muted-1); text-wrap: pretty; }
 .home-page .hp-btn { align-self: flex-start; display: flex; align-items: center; gap: 14px; min-height: 52px; padding: 0 22px; border: 1px solid var(--ink); color: var(--ink); font: 400 13px/normal var(--mono); transition: background-color .3s, color .3s, border-color .3s; }
-.home-page .hp-runs { display: flex; flex-direction: column; gap: 22px; justify-content: flex-end; }
+.home-page .hp-runs { margin: 0; display: flex; flex-direction: column; gap: 22px; justify-content: flex-end; }
 .home-page .hp-count-row { display: flex; align-items: baseline; gap: 14px; }
 .home-page .hp-count { font: 300 clamp(80px, 10.5vw, 184px)/.82 var(--display); letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
 .home-page .hp-count-unit { font: 400 14px/normal var(--mono); color: var(--acc); }
@@ -205,14 +227,12 @@ html.motion .home-page [data-words].is-lit {
 
 /* 7 Contact */
 .home-page .hp-contact { min-height: 90vh; min-height: 90svh; display: flex; flex-direction: column; justify-content: center; gap: clamp(28px, 4vw, 56px); padding: clamp(80px, 12vh, 160px) var(--home-gutter-r) clamp(80px, 12vh, 160px) var(--home-gutter-l); }
-.home-page .hp-contact-lead { margin: 0; max-width: 18em; font-size: clamp(28px, 3.6vw, 60px); line-height: 1.08; letter-spacing: -.03em; text-wrap: balance; }
+.home-page .hp-contact-lead { margin: 0; max-width: 18em; font-weight: 400; font-size: clamp(28px, 3.6vw, 60px); line-height: 1.08; letter-spacing: -.03em; text-wrap: balance; }
 .home-page .hp-mail { padding-bottom: .1em; border-bottom: 1px solid var(--line); font-size: clamp(30px, 6.6vw, 128px); line-height: 1; letter-spacing: -.05em; overflow-wrap: anywhere; }
 .home-page .hp-contact-alt { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px; font-size: 17px; color: var(--muted-1); }
 .home-page .hp-copy { display: flex; align-items: center; min-height: 48px; padding: 0 20px; background: transparent; border: 1px solid var(--ascii-dim); color: var(--ink); font: 400 13px/normal var(--mono); cursor: pointer; transition: border-color .3s, color .3s; }
 .home-page .hp-copy:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 .home-page .hp-ul { border-bottom: 1px solid var(--ascii-dim); }
-/* Visually hidden, still read and selectable: site.js's live region and the address it selects as a fallback */
-.home-page .hp-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* 8 Footer (overrides the shared footer rules) */
 .home-page .hp-foot { position: relative; z-index: 1; align-items: center; gap: 16px 24px; margin-top: 0; padding: 24px var(--home-gutter-r) 24px var(--home-gutter-l); font: 400 13px/normal var(--mono); }
@@ -223,10 +243,19 @@ html.motion .home-page [data-words].is-lit {
 .home-page .hp-loader { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; justify-content: space-between; padding: 20px var(--home-gutter-r) 28px var(--home-gutter-l); background: var(--bg); font: 400 13px/normal var(--mono); color: var(--muted-2); cursor: pointer; transition: transform 1s var(--ease-wipe); }
 .home-page .hp-loader.is-out { transform: translateY(-100%); }
 .home-page .hp-loader-row { display: flex; justify-content: space-between; gap: 16px; }
-.home-page .hp-loader-foot { align-items: flex-end; flex-wrap: wrap; gap: 24px; }
+/* The number's box never follows its digits, so the bar and the number keep their place as it counts (spec AC 9).
+   Wide, it keeps the room of the widest count ("000", 1.86em) beside the bar, digits at the right; where that room
+   is short (415-444px) it shrinks and the widest counts overflow into the gap, and below about 421px briefly onto
+   the bar. Below 415px, where "100" does not fit beside the bar (2 x 20px gutter + 26ch of 13px mono + 24px gap +
+   1.54em of 96px), it has a line of its own. */
+.home-page .hp-loader-foot { align-items: flex-end; gap: 24px; }
 .home-page .hp-loader pre { margin: 0; font: inherit; }
 .home-page .hp-loader-bar { color: var(--ink); }
-.home-page .hp-loader-num { font: 300 clamp(96px, 18vw, 280px)/.78 var(--display); letter-spacing: -.05em; color: var(--ink); }
+.home-page .hp-loader-num { flex: 0 1 1.86em; min-width: 0; display: flex; justify-content: flex-end; font: 300 clamp(96px, 18vw, 280px)/.78 var(--display); letter-spacing: -.05em; color: var(--ink); }
+@media (max-width: 414px) {
+  .home-page .hp-loader-foot { flex-wrap: wrap; }
+  .home-page .hp-loader-num { flex-basis: 100%; justify-content: flex-start; }
+}
 
 /* Custom cursor: created by effects.js (not on hover: none), which sets its size and position */
 .home-page .hp-cursor { position: fixed; left: 0; top: 0; z-index: 80; width: 10px; height: 10px; pointer-events: none; background: var(--acc); border: 1px solid var(--acc); transform: translate3d(-100px, -100px, 0); transition: background-color .3s, border-radius .3s; }

@@ -107,26 +107,59 @@
   // Elapsed time in 60fps frames, the `dt` every per-frame function takes; capped at 3 after a stall.
   const frameDt = elapsedMs => clamp(elapsedMs / (1000 / 60), 0, 3);
 
-  // The page's one frame loop (window.SiteLoop): callbacks get (dt, now) every frame. One that throws is
-  // dropped for good (adding it again does nothing) and reported once through `onError`; the others keep
+  // The page's one frame loop (window.SiteLoop): callbacks get (dt, now) every frame. Read callbacks (addRead)
+  // run first, so one that reads layout does so before any other callback in that frame writes styles. One that
+  // throws is dropped for good (adding it again does nothing) and reported once through `onError`; the others keep
   // running. With no callbacks left the loop stops asking for frames, and its first frame after a (re)start has dt 1.
   function createLoop(requestFrame, onError) {
-    const fns = new Set(), failed = new WeakSet();
+    const reads = new Set(), fns = new Set(), failed = new WeakSet();
     let running = false, last = null;
+    function run(set, dt, now) {
+      for (const fn of [...set]) {
+        if (!set.has(fn)) continue;
+        try { fn(dt, now); } catch (e) { set.delete(fn); failed.add(fn); onError(e); }
+      }
+    }
     function frame(now) {
       const dt = last === null ? 1 : frameDt(now - last);
       last = now;
-      for (const fn of [...fns]) {
-        if (!fns.has(fn)) continue;
-        try { fn(dt, now); } catch (e) { fns.delete(fn); failed.add(fn); onError(e); }
-      }
-      if (fns.size) requestFrame(frame);
+      run(reads, dt, now);
+      run(fns, dt, now);
+      if (reads.size || fns.size) requestFrame(frame);
       else { running = false; last = null; }
     }
+    const adder = set => fn => { if (failed.has(fn)) return; set.add(fn); if (!running) { running = true; requestFrame(frame); } };
     return {
-      add(fn) { if (failed.has(fn)) return; fns.add(fn); if (!running) { running = true; requestFrame(frame); } },
-      remove(fn) { fns.delete(fn); }
+      add: adder(fns),
+      remove(fn) { fns.delete(fn); },
+      addRead: adder(reads),
+      removeRead(fn) { reads.delete(fn); }
     };
+  }
+
+  // `fn` from requestIdleCallback (at most 1s later; `fn` gets its deadline), or after a `fallbackMs` timer where
+  // requestIdleCallback is missing. `win` is the window, passed in so tests can fake it.
+  function idle(fn, win, fallbackMs) {
+    if (win.requestIdleCallback) win.requestIdleCallback(fn, { timeout: 1000 });
+    else win.setTimeout(fn, fallbackMs);
+  }
+  // Runs `fn` once the page has painted and the browser is idle: after the next frame, when idle, or 200ms after
+  // that frame where requestIdleCallback is missing.
+  function afterPaint(fn, win) { win.requestAnimationFrame(() => idle(fn, win, 200)); }
+  // The next step of work already started after paint: when idle, or as a task of its own where
+  // requestIdleCallback is missing, so a chain of steps does not wait 200ms between steps.
+  function whenIdle(fn, win) { idle(fn, win, 0); }
+
+  // Runs `tick` at once and every `ms` while the tab is shown: it stops while `doc` is hidden and ticks at once when
+  // the tab is shown again. `win` gives the timers; both are passed in so tests can fake them.
+  function tickWhileShown(tick, ms, doc, win) {
+    let timer = 0;
+    const start = () => { tick(); timer = win.setInterval(tick, ms); };
+    doc.addEventListener("visibilitychange", () => {
+      win.clearInterval(timer);
+      if (!doc.hidden) start();
+    });
+    if (!doc.hidden) start();
   }
 
   // What a keydown does to the intro loader: "close", "close-no-scroll" for a scroll key (the caller also
@@ -145,7 +178,7 @@
   const api = {
     scrambleText, easeOutCubic, easeOutQuart, easeInOutQuad, loaderState, formatCount, countFrame, runsFrame,
     litPercent, londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, decayVelocityMs, frameDt,
-    createLoop, loaderKey, inView, COUNT_MS, RUNS_MS
+    createLoop, afterPaint, whenIdle, tickWhileShown, loaderKey, inView, COUNT_MS, RUNS_MS
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.EffectsCore = api;
