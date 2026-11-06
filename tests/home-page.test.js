@@ -58,6 +58,7 @@ test("internal links stay relative and open in the same tab", () => {
 // The two project rows leave the site, so they open in a new tab. rel="noopener" without noreferrer, so the
 // projects' own analytics still see marcinurbanski.dev as the referrer; screen readers are told about the new tab.
 test("the claude-skills and TimeRabbit rows open in a new tab and say so", () => {
+  assert.equal(html.match(/target="_blank"/g).length, 2, "only these two links open a new tab");
   for (const href of ["https://github.com/marcin-urbanski/claude-skills", "https://gettimerabbit.com"]) {
     const row = html.match(new RegExp(`<a class="hp-row hp-project"[^>]*href="${href}"[^>]*>[\\s\\S]*?</a>`));
     assert.ok(row, href);
