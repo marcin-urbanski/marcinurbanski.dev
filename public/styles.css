@@ -48,7 +48,8 @@ a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
    it selects as a fallback */
 .hp-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 /* Skip link, first in every page's body: off screen until focused, then at the top left above the custom cursor (80)
-   and the loader (90). <main id="main" tabindex="-1"> takes the focus without drawing a ring round the page. */
+   and the loader (90). Its focus ring is the global a:focus-visible outline above, so no .skip rule sets one.
+   <main id="main" tabindex="-1"> takes the focus without drawing a ring round the page. */
 .skip { position: fixed; left: 12px; top: -100px; z-index: 100; display: flex; align-items: center; min-height: 44px; padding: 0 16px; background: var(--bg); color: var(--ink); font: 400 13px/normal var(--mono); text-decoration: none; }
 .skip:focus { top: 12px; }
 main:focus { outline: none; }

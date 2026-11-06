@@ -544,7 +544,8 @@ test("the meta and og descriptions repeat the hero headline and subline", () => 
   assert.ok(html.includes(`<meta property="og:description" content="${hero}">`), "og:description");
 });
 
-// Spec AC 7: no script holds up the parser; the head preloader is the one inline script (JSON-LD aside).
+// Spec AC 7: no script holds up the parser; the head preloader is the one inline script. JSON-LD is data, not code:
+// it is allowed only with exactly that type and only when its body parses as JSON.
 test("every script with a src is deferred and the only other script is the home page's head preloader", () => {
   const { htmlFiles } = require("../tools/asset-versions.js");
   const root = path.join(__dirname, "../public");
@@ -552,7 +553,8 @@ test("every script with a src is deferred and the only other script is the home 
     const name = path.relative(root, page), inline = [];
     for (const [, attrs, body] of fs.readFileSync(page, "utf8").matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
       if (/\ssrc=/.test(attrs)) assert.match(attrs, /\sdefer\b/, name + ": <script" + attrs + ">");
-      else if (!/type="application\/ld\+json"/.test(attrs)) inline.push(body);
+      else if (attrs === ' type="application/ld+json"') JSON.parse(body);
+      else inline.push(body);
     }
     assert.deepEqual(inline, name === "index.html" ? [headScript] : [], name);
   }
@@ -610,4 +612,24 @@ test("the lit text measures its place on start, on resize and once the fonts hav
   assert.match(lit, /window\.addEventListener\("scroll", [^\n]*\{ passive: true \}\)/);
   assert.match(lit, /window\.addEventListener\("resize", measure\)/);
   assert.match(lit, /document\.fonts\.ready\.then\(measure\)/);
+});
+
+// Spec AC 19: the home page says who Marcin is, with the profiles the page itself links.
+test("the home page's JSON-LD Person matches the page and comes after the head preloader", () => {
+  const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+  assert.equal(blocks.length, 1, "one JSON-LD script");
+  const at = html.indexOf(blocks[0][0]);
+  assert.ok(at > html.indexOf(headScript) && at < html.indexOf("</head>"), "after the preloader, in <head>");
+  const ld = JSON.parse(blocks[0][1]);
+  assert.deepEqual(ld, {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "@id": "https://marcinurbanski.dev/#person",
+    name: "Marcin Urbanski",
+    url: html.match(/<link rel="canonical" href="([^"]*)">/)[1],
+    jobTitle: "Senior web developer",
+    image: html.match(/<meta property="og:image" content="([^"]*)">/)[1],
+    sameAs: ["https://github.com/marcin-urbanski", "https://www.linkedin.com/in/marcin-urbanski-70761424/"]
+  });
+  for (const url of ld.sameAs) assert.ok(html.includes(`href="${url}"`), url);
 });
