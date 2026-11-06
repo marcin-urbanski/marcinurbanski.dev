@@ -196,7 +196,7 @@ html.motion .home-page [data-words].is-lit {
 .home-page .hp-study-title { margin: 0; font: 400 clamp(34px, 4.2vw, 68px)/1 var(--display); letter-spacing: -.035em; text-wrap: balance; }
 .home-page .hp-study-desc { margin: 0; max-width: 32em; font-size: 18px; line-height: 1.55; color: var(--muted-1); text-wrap: pretty; }
 .home-page .hp-btn { align-self: flex-start; display: flex; align-items: center; gap: 14px; min-height: 52px; padding: 0 22px; border: 1px solid var(--ink); color: var(--ink); font: 400 13px/normal var(--mono); transition: background-color .3s, color .3s, border-color .3s; }
-.home-page .hp-runs { display: flex; flex-direction: column; gap: 22px; justify-content: flex-end; }
+.home-page .hp-runs { margin: 0; display: flex; flex-direction: column; gap: 22px; justify-content: flex-end; }
 .home-page .hp-count-row { display: flex; align-items: baseline; gap: 14px; }
 .home-page .hp-count { font: 300 clamp(80px, 10.5vw, 184px)/.82 var(--display); letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
 .home-page .hp-count-unit { font: 400 14px/normal var(--mono); color: var(--acc); }

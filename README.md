@@ -28,6 +28,8 @@ Personal site and writing of Marcin Urbanski. Plain HTML, CSS and JS in `public/
   fallback faces in `public/styles.css` (`pip3 install --user fonttools brotli`, then `python3 tools/font-metrics.py`
   on a Mac); it measures widths over the site's own copy, so re-run it and paste the values when a font file or much
   of the copy changes.
-- `tools/study-runs.py`: offline script that writes `public/study-runs.json` from the study's results in claude-skills.
+- `tools/study-runs.py`: offline script that writes `public/study-runs.json` from the study's results in claude-skills
+  and prints the summary sentence for the runs figure's caption in `public/index.html` (`--summary` only prints it
+  from the JSON already there); paste it in when the data changes, `tests/home-page.test.js` fails until you do.
 - `docs/design/`: the design handoff for the home page; `docs/specs/` and `docs/plans/`: its spec and plan.
 - `DEPLOY.md`: running locally, deploying, adding a post.

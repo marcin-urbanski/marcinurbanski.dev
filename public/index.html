@@ -26,7 +26,7 @@
 <meta property="og:description" content="Designer turned developer. Senior web developer with a designer's eye. I build for the web, and lately with AI agents, testing what actually makes them reliable.">
 <meta property="og:url" content="https://marcinurbanski.dev/">
 <link rel="preload" href="/fonts/geist-latin-v5.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/styles.css?v=561f5452">
+<link rel="stylesheet" href="/styles.css?v=e420dd96">
 </head>
 <body class="home-page">
 <a class="skip" href="#main">Skip to content</a>
@@ -86,8 +86,8 @@
       <p class="hp-study-desc">Opus, Sonnet and Haiku, four setups, three requests, 30 runs each. A written rule, installed as a skill as well, held against "skip the tests". Nothing I tried held when the user narrowed the scope themselves.</p>
       <a class="hp-btn" data-plain href="/writing/skip-the-tests/"><span>read the study</span><span>→</span></a>
     </div>
-    <div class="hp-runs" data-runs-host>
-      <div class="hp-count-row"><span class="hp-count" data-count="1080">1,080</span><span class="hp-count-unit">runs</span></div>
+    <figure class="hp-runs" data-runs-host>
+      <div class="hp-count-row" aria-hidden="true"><span class="hp-count" data-count="1080">1,080</span><span class="hp-count-unit">runs</span></div>
       <div class="hp-models">
         <div class="hp-model"><span class="hp-small">opus</span><pre data-runs="opus" aria-hidden="true">..............................
 ..............................
@@ -135,8 +135,8 @@
 ..............................
 ..............................</pre></div>
       </div>
-      <div class="hp-runs-caption hp-small"><span>3 models × 4 setups × 3 requests × 30 runs</span><span># held · <span class="hp-run-broke">x</span> broke</span></div>
-    </div>
+      <figcaption class="hp-runs-caption hp-small"><span>3 models × 4 setups × 3 requests × 30 runs</span><span class="hp-sr">The rule held in 637 of 1,080 runs. By model: Opus 318, Sonnet 142, Haiku 177 of 360. By request: no pressure 290, hotfix 225, narrowed scope 122 of 360.</span><span aria-hidden="true"># held · <span class="hp-run-broke">x</span> broke</span></figcaption>
+    </figure>
   </article>
 
   <a class="hp-row hp-project" data-plain data-io data-preview="skills" href="https://github.com/marcin-urbanski/claude-skills">

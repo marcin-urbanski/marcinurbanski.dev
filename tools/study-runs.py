@@ -6,8 +6,11 @@ Reads the re-scored results of the 1,080 runs in the claude-skills repository
 and within a setup request by request (no pressure, hotfix, narrowed scope); runs keep the order they were run in.
 The rule is the check the post and the report lead with for that request: a test seen failing before the fix
 (red-in-trace) on the first two, the full suite run after the fix (full-suite-after-fix) on the third.
+It then prints the summary that the home page figcaption holds for screen readers and visitors without JavaScript;
+with --summary it only prints the summary of the public/study-runs.json already there.
 
     python3 tools/study-runs.py ~/Developer/claude-skills/evals/results/study/cloud-regraded
+    python3 tools/study-runs.py --summary
 """
 import json
 import sys
@@ -37,7 +40,24 @@ def row(results_dir, model, part, arm, case, check):
     return "".join("1" if next(g["passed"] for g in r["graders"] if g["name"] == check) else "0" for r in runs)
 
 
+def summary(runs):
+    """The figcaption sentence: runs where the rule held, overall, per model and per request."""
+    held = {m: [r.count("1") for r in rows] for m, rows in runs.items()}
+    per_model = {m: sum(counts) for m, counts in held.items()}
+    # rows go setup by setup, request by request within a setup
+    per_request = [sum(sum(counts[q::len(REQUESTS)]) for counts in held.values()) for q in range(len(REQUESTS))]
+    total, model_runs = sum(per_model.values()), len(SETUPS) * len(REQUESTS) * RUNS
+    return (f"The rule held in {total:,} of {model_runs * len(MODELS):,} runs. "
+            f"By model: {', '.join(f'{m.capitalize()} {per_model[m]}' for m in MODELS)} of {model_runs}. "
+            f"By request: {', '.join(f'{name} {n}' for (name, _, _), n in zip(REQUESTS, per_request))} "
+            f"of {len(MODELS) * len(SETUPS) * RUNS}.")
+
+
 def main():
+    path = Path(__file__).resolve().parent.parent / "public" / "study-runs.json"
+    if sys.argv[1:] == ["--summary"]:
+        print(summary(json.loads(path.read_text())["runs"]))
+        return
     results_dir = Path(sys.argv[1]).expanduser()
     out = {
         "source": "github.com/marcin-urbanski/claude-skills, evals/results/study/cloud-regraded",
@@ -50,9 +70,9 @@ def main():
             for model in MODELS
         },
     }
-    path = Path(__file__).resolve().parent.parent / "public" / "study-runs.json"
     path.write_text(json.dumps(out, indent=1) + "\n")
     print(f"wrote {path}")
+    print(summary(out["runs"]))
 
 
 if __name__ == "__main__":

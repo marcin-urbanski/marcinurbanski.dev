@@ -138,6 +138,34 @@ test("the runs grids have a legend: # held · x broke, the x in the red token", 
   assert.match(css, /\.home-page \.hp-run-broke \{ color: var\(--red\); \}/);
 });
 
+// Spec AC 13: the runs block is a figure; its caption says in words what the grids show, so it reads without JS
+// and to a screen reader, while the counter and the legend, which only make sense next to the grids, are hidden.
+test("the runs block is a figure with its caption as figcaption, the counter and legend hidden from assistive tech", () => {
+  const fig = html.match(/<figure class="hp-runs" data-runs-host>([\s\S]*?)<\/figure>/);
+  assert.ok(fig, "figure.hp-runs[data-runs-host]");
+  assert.match(fig[1], /<div class="hp-count-row" aria-hidden="true"><span class="hp-count" data-count="1080">1,080<\/span>/);
+  assert.match(fig[1], /<figcaption class="hp-runs-caption hp-small">[\s\S]*<\/figcaption>\s*$/);
+  assert.match(fig[1], /<span aria-hidden="true"># held · <span class="hp-run-broke">x<\/span> broke<\/span><\/figcaption>/);
+  assert.equal([...fig[1].matchAll(/data-runs="/g)].length, 3);
+  assert.match(css, /\.home-page \.hp-runs \{ margin: 0; /);
+});
+
+// The sentence tools/study-runs.py prints, recounted here from study-runs.json.
+test("the figcaption's summary matches study-runs.json overall, per model and per request", () => {
+  const held = row => row.split("1").length - 1;
+  const sum = rows => rows.reduce((n, row) => n + held(row), 0);
+  const all = MODELS.flatMap(m => study.runs[m]);
+  const byRequest = [0, 1, 2].map(q => sum(all.filter((_, r) => r % 3 === q)));
+  const [opus, sonnet, haiku] = MODELS.map(m => sum(study.runs[m]));
+  const expected = `The rule held in ${sum(all).toLocaleString("en-US")} of 1,080 runs. ` +
+    `By model: Opus ${opus}, Sonnet ${sonnet}, Haiku ${haiku} of 360. ` +
+    `By request: no pressure ${byRequest[0]}, hotfix ${byRequest[1]}, narrowed scope ${byRequest[2]} of 360.`;
+  const caption = html.match(/<figcaption[^>]*>([\s\S]*?)<\/figcaption>/);
+  assert.ok(caption, "a figcaption");
+  assert.match(caption[1], new RegExp(`<span class="hp-sr">${expected.replace(/[.]/g, "\\.")}</span>`));
+  assert.ok(bodyText.includes(expected));
+});
+
 test("effects.js draws the grids from study-runs.json", () => {
   const js = fs.readFileSync(path.join(__dirname, "../public/effects.js"), "utf8");
   assert.match(js, /fetch\("\/study-runs\.json"\)/);
