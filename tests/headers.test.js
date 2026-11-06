@@ -39,6 +39,8 @@ test("matches follows Cloudflare's splat and placeholder rules", () => {
   assert.ok(matches("/*.js", "/writing/a.js"));
   assert.ok(!matches("/*.js", "/study-runs.json"));
   assert.ok(matches("/fonts/*", "/fonts/geist-latin-v5.woff2"));
+  assert.ok(matches("/fonts/*.woff2", "/fonts/geist-latin-v5.woff2"));
+  assert.ok(!matches("/fonts/*.woff2", "/fonts/OFL.txt"));
   assert.ok(matches("/:dir/index.html", "/writing/index.html"));
   assert.ok(!matches("/:dir/index.html", "/writing/a/index.html"));
 });
@@ -46,7 +48,7 @@ test("matches follows Cloudflare's splat and placeholder rules", () => {
 // The URLs of these files change with their content (?v=<hash>, or a version in a font's file name), so a
 // browser may keep each one for a year without asking again (spec AC 11).
 test("scripts, stylesheets, fonts and the portrait data are cached for a year", () => {
-  for (const rule of ["/*.js", "/*.css", "/fonts/*", "/portrait-data.json"]) {
+  for (const rule of ["/*.js", "/*.css", "/fonts/*.woff2", "/portrait-data.json"]) {
     const found = rules.find(r => r.path === rule);
     assert.ok(found, `${rule} has a rule`);
     assert.equal(found.headers["Cache-Control"], LONG_CACHE, rule);
@@ -73,6 +75,15 @@ test("no Cache-Control rule matches a page, the runs data, an image or a feed", 
   const others = ["/study-runs.json", "/rss.xml", "/sitemap.xml", "/robots.txt", "/favicon.svg", "/timerabbit-day.webp"];
   for (const url of [...pages, ...pretty, ...others]) {
     assert.deepEqual(cacheRules.filter(r => matches(r.path, url)).map(r => r.path), [], url);
+  }
+});
+
+// Only the font files carry a version in their names; the licence next to them (OFL.txt) keeps its name, so a
+// year-long cache would keep an edited licence from reaching anyone.
+test("each font file is cached for a year by exactly one rule and nothing else in /fonts/ is", () => {
+  for (const name of fs.readdirSync(path.join(PUBLIC, "fonts"))) {
+    const found = cacheRules.filter(r => matches(r.path, "/fonts/" + name)).map(r => r.headers["Cache-Control"]);
+    assert.deepEqual(found, name.endsWith(".woff2") ? [LONG_CACHE] : [], name);
   }
 });
 

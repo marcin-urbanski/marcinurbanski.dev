@@ -18,9 +18,9 @@ node tools/asset-versions.js && node --test tests/ && wrangler pages deploy --br
 again (`Cache-Control: public, max-age=31536000, immutable`), while HTML is always revalidated. That is safe because
 their URLs change with their content: the `?v=` hash the tool writes into each script, stylesheet and JSON data URL
 makes a returning visitor fetch the new file after a deploy, and fonts carry a version in the file name
-(`geist-latin-v5.woff2`), so a changed font needs a new file name. Everything else (`study-runs.json`, images, feeds)
-keeps the zone's Browser Cache TTL of 4 hours, which applies only where the origin's max-age is lower; an image that
-changes needs a new file name too. After a deploy, check with
+(`geist-latin-v5.woff2`), so a changed font needs a new file name. Everything else (`study-runs.json`, images, feeds,
+the font licence `fonts/OFL.txt`) keeps the zone's Browser Cache TTL of 4 hours, which applies only where the
+origin's max-age is lower; an image that changes needs a new file name too. After a deploy, check with
 `curl -sI 'https://marcinurbanski.dev/styles.css?v=<hash>'` (the hash from the page source): it shows the year-long
 `Cache-Control` and the `/*` security headers, and `curl -sI https://marcinurbanski.dev/` does not show it.
 

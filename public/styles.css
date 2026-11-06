@@ -245,8 +245,8 @@ html.motion .home-page [data-words].is-lit {
 /* The number's box never follows its digits, so the bar and the number keep their place as it counts (spec AC 9).
    Wide, it keeps the room of the widest count ("000", 1.86em) beside the bar, digits at the right; where that room
    is short (415-444px) it shrinks and the widest counts overflow into the gap, and below about 421px briefly onto
-   the bar. Below 415px, where "100" does not
-   fit beside the bar (2 x 20px gutter + 26ch of 13px mono + 24px gap + 1.54em of 96px), it has a line of its own. */
+   the bar. Below 415px, where "100" does not fit beside the bar (2 x 20px gutter + 26ch of 13px mono + 24px gap +
+   1.54em of 96px), it has a line of its own. */
 .home-page .hp-loader-foot { align-items: flex-end; gap: 24px; }
 .home-page .hp-loader pre { margin: 0; font: inherit; }
 .home-page .hp-loader-bar { color: var(--ink); }
