@@ -48,15 +48,18 @@ test("every page links each local script, stylesheet and data file at its curren
   }
 });
 
-// versionAssets versions only the URLs written in the HTML, and public/_headers keeps every .js and .css for a year,
-// so a script or stylesheet that names a local script, stylesheet or data file itself (import, fetch, @import)
+// versionAssets versions only the URLs written in the HTML, and public/_headers keeps every .js and .css file and
+// /portrait-data.json for a year, so a script or stylesheet that names one of them itself (import, fetch, @import)
 // would serve it unversioned and stuck for a year. A URL read from the HTML (face.dataset.src) is versioned there.
-// study-runs.json is the one exception: it keeps the default cache.
+// Other .json files keep the default cache, and /study-runs.json is the one such URL allowed, so a new one gets a
+// look at its cache rule first. Root-absolute, ./, ../ and bare relative URLs all count when they stand alone in
+// quotes or url(…), so a file name in a comment or an error message does not.
 test("no script or stylesheet names a local .js, .css or .json URL other than /study-runs.json", () => {
   const files = fs.readdirSync(PUBLIC).filter(f => f.endsWith(".js")).concat("styles.css");
   for (const file of files) {
     const src = fs.readFileSync(path.join(PUBLIC, file), "utf8");
-    for (const [, url] of src.matchAll(/["'`(]\s*(\/[^"'`)\s]*\.(?:js|css|json))\b/g)) {
+    for (const [, url] of src.matchAll(/(?:["'`]|url\()\s*([^"'`()\s]+\.(?:js|css|json))(?=[?#"'`)])/g)) {
+      if (url.includes("://") || url.startsWith("data:")) continue;
       assert.equal(url, "/study-runs.json", `${file} names ${url}`);
     }
   }
