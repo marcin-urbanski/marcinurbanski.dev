@@ -1,33 +1,31 @@
 #!/bin/sh
-# Share cards and the touch icon, made offline from the running site; nothing here runs at request time.
+# Share cards and the touch icon, made offline from public/; nothing here runs at request time.
 #
 # Screenshots the home page (its hero) and each post in public/writing/ (its title) at 1200×630 under reduced
 # motion, so every effect shows its final state, and saves them as public/og/home.jpg and public/og/<slug>.jpg for
-# og:image. The home card would otherwise change on every run, so it is shot from a copy of public/ whose index.html
-# hides the header clock's time (the "Southampton" label stays) and seeds Math.random, which the portrait uses to
-# dither the bottom edge of the face. Its index.html also runs requestAnimationFrame callbacks from a 16ms timer: in
-# about one run in fifteen, headless Chrome draws no frame until the virtual time budget has run out, and the
-# portrait, which starts after the first frame, then missed the card. The face's measure steps wait for idle
-# callbacks, which under virtual time come only at their 1s timeout, so the shots get 8 virtual seconds; that costs
-# no real time. python3 serves the copy on its own port, so its root-absolute URLs and fonts load as they do on the
-# site; the run stops if that port is taken, rather than shoot whatever else answers there. A new home card that
-# differs from the committed one is reported, as with the seed it should come out the same until the page changes.
+# og:image. Every card is shot from a copy of public/ that python3 serves on its own port, so its root-absolute URLs
+# and fonts load as they do on the site; the run stops if that port is taken, rather than shoot whatever else
+# answers there. The posts are copied as they are. The home card would otherwise change on every run, so the copy's
+# index.html hides the header clock's time (the "Southampton" label stays) and seeds Math.random, which the portrait
+# uses to dither the bottom edge of the face. It also runs requestAnimationFrame callbacks from a 16ms timer: in some
+# runs, headless Chrome draws no frame until the virtual time budget has run out, and the portrait, which starts
+# after the first frame, then missed the card. The face's measure steps wait for idle callbacks, which under virtual
+# time come only at their 1s timeout, so the shots get 8 virtual seconds; that costs no real time. A new home card
+# that differs from the committed one is reported, as with the seed it should come out the same until the page
+# changes.
 # Then renders public/favicon.svg at 180×180 on the page background (--bg in
 # public/styles.css) as public/apple-touch-icon.png. iOS fills a transparent touch icon with black and Chrome's
 # screenshots carry an alpha channel, so the icon goes through a 24-bit BMP to come out as an RGB PNG (IHDR colour
 # type 2) with no alpha.
-# Needs macOS (sips, python3), Google Chrome, and the site running: wrangler pages dev --port 8788.
+# Needs macOS (sips, python3), Google Chrome, and port 8789 free.
 #
 #     sh tools/og-images.sh
 set -eu
 
 root=$(cd "$(dirname "$0")/.." && pwd)
-site=http://localhost:8788
 chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
-
-curl -fsS -o /dev/null "$site/" || { echo "Start the site first: wrangler pages dev --port 8788" >&2; exit 1; }
 
 # shot <url> <width> <height> <png>: one headless Chrome screenshot, with a throwaway profile.
 shot() {
@@ -47,7 +45,7 @@ card() {
 
 mkdir -p "$root/public/og"
 
-# The home page from the copy described above. Math.random becomes a Park–Miller generator with a fixed seed. sed
+# The copy of public/ described above. Math.random becomes a Park–Miller generator with a fixed seed. sed
 # leaves the page as it is when it finds no </head>, and the card would then change on every run without a word.
 copy=http://127.0.0.1:8789
 cp -R "$root/public" "$tmp/site"
@@ -81,7 +79,7 @@ fi
 
 for post in "$root"/public/writing/*/; do
   slug=$(basename "$post")
-  card "$site/writing/$slug/" "$slug"
+  card "$copy/writing/$slug/" "$slug"
 done
 
 # The touch icon: the favicon on an opaque page of --bg, so its rounded corners blend into the same colour.
