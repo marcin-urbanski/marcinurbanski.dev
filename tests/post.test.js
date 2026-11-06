@@ -156,3 +156,48 @@ test("no .skip rule overrides the global focus outline", () => {
   assert.ok(rules.length >= 2, ".skip rules");
   for (const rule of rules) assert.doesNotMatch(rule, /outline/, rule);
 });
+
+// DEPLOY.md "Adding a post": each post is listed on the home page, in rss.xml and in sitemap.xml, newest first.
+const read = name => fs.readFileSync(path.join(__dirname, "../public", name), "utf8");
+const byDate = posts.map(name => ({
+  url: `https://marcinurbanski.dev/${path.dirname(name)}/`,
+  href: `/${path.dirname(name)}/`,
+  title: page(name).match(/<h1>([^<]*)<\/h1>/)[1],
+  date: page(name).match(/<time datetime="([^"]*)">/)[1],
+  minutes: page(name).match(/<p class="post-meta">[\s\S]*?<span>(\d+ min)<\/span><\/p>/)[1]
+})).sort((a, b) => b.date.localeCompare(a.date));
+
+test("the home page's writing list has every post, newest first, with its title, date and reading time", () => {
+  const section = read("index.html").match(/<section class="hp-writing"[\s\S]*?<\/section>/)[0];
+  const rows = [...section.matchAll(/<a class="hp-row hp-post" data-plain data-io href="([^"]*)">\s*<time datetime="([^"]*)">[^<]*<\/time>\s*<h3 class="hp-post-title">([^<]*)<\/h3>\s*<span class="hp-row-meta"><span>([^<]*)<\/span>/g)]
+    .map(m => ({ href: m[1], date: m[2], title: m[3].replace(/&amp;/g, "&"), minutes: m[4] }));
+  assert.deepEqual(rows, byDate.map(({ href, date, title, minutes }) => ({ href, date, title, minutes })));
+});
+
+test("rss.xml lists every post, newest first, and its last build is the newest post's day", () => {
+  const rss = read("rss.xml");
+  const items = [...rss.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(([, item]) => ({
+    title: item.match(/<title>([^<]*)<\/title>/)[1],
+    url: item.match(/<link>([^<]*)<\/link>/)[1],
+    guid: item.match(/<guid isPermaLink="true">([^<]*)<\/guid>/)[1],
+    date: new Date(item.match(/<pubDate>([^<]*)<\/pubDate>/)[1]).toISOString().slice(0, 10)
+  }));
+  assert.deepEqual(items, byDate.map(({ title, url, date }) => ({ title, url, guid: url, date })));
+  const built = new Date(rss.match(/<lastBuildDate>([^<]*)<\/lastBuildDate>/)[1]).toISOString().slice(0, 10);
+  assert.equal(built, byDate[0].date);
+});
+
+test("sitemap.xml lists the home page and every post", () => {
+  const locs = [...read("sitemap.xml").matchAll(/<loc>([^<]*)<\/loc>/g)].map(m => m[1]);
+  assert.deepEqual(locs.sort(), ["https://marcinurbanski.dev/", ...byDate.map(p => p.url)].sort());
+});
+
+test("every post has one h1, and its sections are h2s that follow it", () => {
+  for (const name of posts) {
+    const article = page(name).match(/<article class="post">([\s\S]*?)<\/article>/)[1];
+    const levels = [...article.matchAll(/<h([1-6])\b/g)].map(m => Number(m[1]));
+    assert.equal(levels.filter(l => l === 1).length, 1, name);
+    assert.equal(levels[0], 1, name);
+    levels.slice(1).forEach((l, i) => assert.ok(l >= 2 && l <= levels[i] + 1, `${name}: h${levels[i]} then h${l}`));
+  }
+});
