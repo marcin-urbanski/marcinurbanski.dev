@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { htmlFiles } = require("../tools/asset-versions.js");
+const { jsonLd } = require("./helpers.js");
 
 const css = fs.readFileSync(path.join(__dirname, "../public/styles.css"), "utf8");
 
@@ -119,14 +120,6 @@ test("each og:image file is a JPEG of 1200×630 under 300 KB", () => {
     assert.ok(jpg.length < 300 * 1024, card + ": " + jpg.length + " bytes");
   }
 });
-
-// Spec AC 19: structured data, read from the page's one JSON-LD script.
-const jsonLd = html => {
-  const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
-  assert.equal(blocks.length, 1, "one JSON-LD script");
-  assert.ok(html.indexOf(blocks[0][0]) < html.indexOf("</head>"), "JSON-LD in <head>");
-  return JSON.parse(blocks[0][1]);
-};
 
 test("each post's JSON-LD BlogPosting repeats its h1, description, date, canonical and card", () => {
   assert.ok(posts.includes("writing/skip-the-tests/index.html"));

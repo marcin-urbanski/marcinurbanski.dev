@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { runsFrame } = require("../public/effects-core.js");
+const { fnSource, jsonLd } = require("./helpers.js");
 const study = require("../public/study-runs.json");
 const MODELS = ["opus", "sonnet", "haiku"];
 
@@ -420,7 +421,7 @@ const cssRule = sel => {
 };
 
 // Spec AC 9: the number's box comes from the layout, never from its digits, so neither it nor the bar moves as
-// the count changes. Wide, it keeps the room of the widest count ("000" is 1.85em of Newsreader) with its digits
+// the count changes. Wide, it keeps the room of the widest count ("000" is 1.86em of Geist) with its digits
 // at the right; below 415px, where "100" did not fit beside the bar, it always has a line of its own.
 test("the loader number's box does not change with its digits (spec AC 9)", () => {
   assert.doesNotMatch(cssRule(".home-page .hp-loader-foot"), /flex-wrap/);
@@ -488,17 +489,10 @@ test("portrait.js holds no data and is under 22,000 bytes", () => {
   assert.match(js, /fetch\(face\.dataset\.src\)/);
 });
 
-// The source of one top-level portrait.js function, from its declaration to the closing brace at its indent.
-const portraitFn = (js, name) => {
-  const m = js.match(new RegExp("\\n( *)function " + name + "\\([\\s\\S]*?\\n\\1\\}"));
-  assert.ok(m, "function " + name);
-  return m[0];
-};
-
 test("the portrait's frame functions read no layout (spec AC 5)", () => {
   const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
   for (const name of ["drawFace", "step", "update3d"]) {
-    assert.doesNotMatch(portraitFn(js, name), /getBoundingClientRect|getClientRects|scroll[XY]\b|inner(Width|Height)|client(Width|Height)|scrollHeight/, name);
+    assert.doesNotMatch(fnSource(js, name), /getBoundingClientRect|getClientRects|scroll[XY]\b|inner(Width|Height)|client(Width|Height)|scrollHeight/, name);
   }
 });
 
@@ -570,12 +564,7 @@ test("every script with a src is deferred and the only other script is the home 
 });
 
 const effectsJs = fs.readFileSync(path.join(__dirname, "../public/effects.js"), "utf8");
-// The source of one top-level effects.js setup function, from its declaration to the closing brace at its indent.
-const effectsFn = name => {
-  const m = effectsJs.match(new RegExp("\\n( *)function " + name + "\\([\\s\\S]*?\\n\\1\\}"));
-  assert.ok(m, "function " + name);
-  return m[0];
-};
+const effectsFn = name => fnSource(effectsJs, name);
 
 // Spec AC 2: the loader, intro and one-shots keep their timing; the rest waits until the page has painted.
 test("effects.js sets up the clock, cursor, preview panel and hover scramble after the first paint", () => {
@@ -625,11 +614,8 @@ test("the lit text measures its place on start, on resize and once the fonts hav
 
 // Spec AC 19: the home page says who Marcin is, with the profiles the page itself links.
 test("the home page's JSON-LD Person matches the page and comes after the head preloader", () => {
-  const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
-  assert.equal(blocks.length, 1, "one JSON-LD script");
-  const at = html.indexOf(blocks[0][0]);
-  assert.ok(at > html.indexOf(headScript) && at < html.indexOf("</head>"), "after the preloader, in <head>");
-  const ld = JSON.parse(blocks[0][1]);
+  const ld = jsonLd(html);
+  assert.ok(html.indexOf('<script type="application/ld+json">') > html.indexOf(headScript), "after the preloader");
   assert.deepEqual(ld, {
     "@context": "https://schema.org",
     "@type": "Person",
