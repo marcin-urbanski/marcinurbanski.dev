@@ -150,6 +150,15 @@ test("the runs block is a figure with its caption as figcaption, the counter and
   assert.match(css, /\.home-page \.hp-runs \{ margin: 0; /);
 });
 
+// The model labels name grids a screen reader skips, so read alone they say nothing; the figcaption names each model.
+test("the runs grids and their model labels are hidden from assistive tech as one block", () => {
+  const fig = html.match(/<figure class="hp-runs" data-runs-host>([\s\S]*?)<\/figure>/);
+  assert.ok(fig, "figure.hp-runs[data-runs-host]");
+  const models = fig[1].match(/<div class="hp-models"[^>]*>/);
+  assert.equal(models && models[0], '<div class="hp-models" aria-hidden="true">');
+  assert.equal([...fig[1].matchAll(/<span class="hp-small">(opus|sonnet|haiku)<\/span>/g)].length, 3);
+});
+
 // The sentence tools/study-runs.py prints, recounted here from study-runs.json.
 test("the figcaption's summary matches study-runs.json overall, per model and per request", () => {
   const held = row => row.split("1").length - 1;
