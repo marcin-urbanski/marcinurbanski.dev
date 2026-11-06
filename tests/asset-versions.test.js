@@ -94,6 +94,7 @@ test("each font token lists a metric-matched fallback right after its web font",
   }
 });
 
+// A range listed twice is a sign that the web font and fallback face lists have drifted apart.
 test("no @font-face lists a unicode-range entry twice", () => {
   const css = fs.readFileSync(path.join(PUBLIC, "styles.css"), "utf8");
   for (const [, range] of css.matchAll(/unicode-range: ([^;]+);/g)) {

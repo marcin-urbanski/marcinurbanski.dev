@@ -14,8 +14,8 @@ fallback face this prints the four descriptors to paste into its @font-face:
 The variable web fonts are measured at the weight the face stands in for. Newsreader is also measured at opsz 48:
 the browser sets the optical size to the font size (font-optical-sizing: auto), and the site's serif phrases run
 from 22px to 200px with most between 28px and 68px, where the default opsz 18 is several percent narrower than what
-renders. Against the rendered page, opsz 48 left the phrases within about 2.5% of Newsreader; opsz 72 made them 2-7%
-wider. Needs fontTools and brotli (for woff2):
+renders. Against the rendered page, opsz 48 left the phrases within about 3% of Newsreader at 1280px and up to 5%
+on phones, with no line added; opsz 72 made them 2-7% wider. Needs fontTools and brotli (for woff2):
 
     pip3 install --user fonttools brotli
     python3 tools/font-metrics.py
@@ -37,7 +37,7 @@ def visible(markup):
 
 
 def site_copy():
-    """The text of every page set in Geist: no scripts and styles, and no pre or code, which are in Geist Mono."""
+    """The visible text of every page without scripts, styles and pre/code blocks (those are in Geist Mono)."""
     pages = FONTS.parent.glob("**/*.html")
     return " ".join(visible(re.sub(r"<(script|style|pre|code)\b[\s\S]*?</\1>", " ", p.read_text())) for p in pages)
 
