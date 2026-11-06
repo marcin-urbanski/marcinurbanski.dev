@@ -528,6 +528,8 @@ test("a resize before the first measure has finished starts it again", () => {
   const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
   const resize = js.slice(js.indexOf('window.addEventListener("resize"'), js.indexOf('window.addEventListener("scroll"'));
   assert.match(resize, /rt = setTimeout\(\(\) => \{\n *if \(!ready\) \{ stale = true; return; \}/);
+  const font = js.slice(js.indexOf("document.fonts.load("));
+  assert.match(font, /if \(ready\) \{ measure\(\); drawFace\(0\); \} else if \(cw\) stale = true;/);
   const first = fnSource(js, "firstMeasure");
   assert.match(first, /\{\n *stale = false;\n *const steps = measureSteps\(\);/);
   assert.match(first, /steps\.shift\(\)\(\);\n *if \(stale\) return firstMeasure\(whenIdle\);\n *if \(steps\.length\) return whenIdle\(doStep\);\n *ready = true;\n *run\(\);/);
