@@ -68,11 +68,15 @@ test("every versioned URL a page links is cached for a year by exactly one rule"
 });
 
 // HTML must revalidate so a deploy reaches visitors at once; study-runs.json is fetched without a version and
-// images and feeds keep their names, so they keep the default too.
+// images and feeds keep their names, so they keep the default too. The share cards and the touch icon are remade
+// under the same names (DEPLOY.md), so every file in public/og/ is checked, a new post's card included.
 test("no Cache-Control rule matches a page, the runs data, an image or a feed", () => {
   const pages = htmlFiles(PUBLIC).map(p => "/" + path.relative(PUBLIC, p).split(path.sep).join("/"));
   const pretty = pages.map(p => p.replace(/index\.html$/, "")).concat(pages.map(p => p.replace(/\.html$/, "")));
-  const others = ["/study-runs.json", "/rss.xml", "/sitemap.xml", "/robots.txt", "/favicon.svg", "/timerabbit-day.webp"];
+  const cards = fs.readdirSync(path.join(PUBLIC, "og")).map(name => "/og/" + name);
+  assert.ok(cards.length >= 2, "the home card and the post's card");
+  const others = ["/study-runs.json", "/rss.xml", "/sitemap.xml", "/robots.txt", "/favicon.svg", "/timerabbit-day.webp",
+    "/apple-touch-icon.png", ...cards];
   for (const url of [...pages, ...pretty, ...others]) {
     assert.deepEqual(cacheRules.filter(r => matches(r.path, url)).map(r => r.path), [], url);
   }

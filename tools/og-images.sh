@@ -30,8 +30,10 @@ shot() {
     --virtual-time-budget=4000 --screenshot="$4" "$1" 2>/dev/null
 }
 
-# card <url> <name>: the page at <url> as public/og/<name>.jpg, at quality 82 to stay well under 300 KB.
+# card <url> <name>: the page at <url> as public/og/<name>.jpg, at quality 82 to stay well under 300 KB. Chrome
+# screenshots an error page and exits 0, so the page is fetched first and the run stops before a card is overwritten.
 card() {
+  curl -fsS -o /dev/null "$1" || { echo "Could not load $1; public/og/$2.jpg is left as it was" >&2; exit 1; }
   shot "$1" 1200 630 "$tmp/$2.png"
   sips -s format jpeg -s formatOptions 82 "$tmp/$2.png" --out "$root/public/og/$2.jpg" >/dev/null
   echo "public/og/$2.jpg"
