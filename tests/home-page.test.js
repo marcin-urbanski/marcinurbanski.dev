@@ -496,17 +496,61 @@ test("the portrait's frame functions read no layout (spec AC 5)", () => {
   }
 });
 
-test("the portrait measures the headline lines in the loop's read phase while the reveal runs", () => {
+// The headline lines may start sliding in before or after the first measure; either way they are followed.
+test("the portrait follows the hero reveal from its transitionrun and from every measure", () => {
   const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
-  assert.match(js, /SiteLoop\.addRead\(/);
-  assert.match(js, /SiteLoop\.removeRead\(/);
-  assert.match(js, /"transitionrun"/);
+  assert.match(js, /\n  heroText\.addEventListener\("transitionrun", followReveal\);/);
+  assert.match(fnSource(js, "measureCover"), /\n    measureZones\(\);\n    followReveal\(\);\n  \}$/);
 });
 
+test("the portrait measures the headline lines in the loop's read phase while the reveal runs", () => {
+  const follow = fnSource(fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8"), "followReveal");
+  assert.match(follow, /const wait = revealWait = \{\};\n    window\.SiteLoop\.addRead\(measureZones\);/);
+});
+
+// Only the newest reveal's wait ends the reading; it then measures once more, with every line at rest.
+test("the portrait stops reading and measures the headline once more when the newest reveal settles", () => {
+  const follow = fnSource(fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8"), "followReveal");
+  assert.match(follow, /Promise\.allSettled\(anims\.map\(a => a\.finished\)\)\.then\(\(\) => \{\n *if \(revealWait !== wait\) return;\n *revealWait = null;\n *window\.SiteLoop\.removeRead\(measureZones\);\n *measureZones\(\);\n *\}\);/);
+});
+
+// Spec AC 2: the grids are fetched, and so the face measured, only from the after-paint callback.
 test("the portrait starts after the first paint", () => {
   const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
   assert.match(js, /const core = window\.EffectsCore;/);
-  assert.match(js, /core\.afterPaint\(fn, window\)/);
+  assert.match(js, /\n  const afterPaint = fn => core \? core\.afterPaint\(fn, window\) : setTimeout\(fn, 0\);/);
+  assert.match(js, /\n  afterPaint\(\(\) => loadGrids\(\)\.then\(\(\) => firstMeasure\(whenIdle\), e => console\.error\(e\)\)\);/);
+  assert.equal(js.match(/loadGrids\(\)/g).length, 1, "loadGrids() is called only there");
+});
+
+// Spec AC 2: a resize or the font arriving during the first measure restarts it, so it never mixes two sizes.
+test("a resize before the first measure has finished starts it again", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8");
+  const resize = js.slice(js.indexOf('window.addEventListener("resize"'), js.indexOf('window.addEventListener("scroll"'));
+  assert.match(resize, /rt = setTimeout\(\(\) => \{\n *if \(!ready\) \{ stale = true; return; \}/);
+  const first = fnSource(js, "firstMeasure");
+  assert.match(first, /\{\n *stale = false;\n *const steps = measureSteps\(\);/);
+  assert.match(first, /steps\.shift\(\)\(\);\n *if \(stale\) return firstMeasure\(whenIdle\);\n *if \(steps\.length\) return whenIdle\(doStep\);\n *ready = true;\n *run\(\);/);
+});
+
+// Spec AC 1: while the loader covers the page neither canvas is drawn; the bubbles still move and the face keeps
+// turning, so both are as they should be when it lifts.
+test("while the loader covers the page the portrait moves but draws nothing", () => {
+  const run = fnSource(fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8"), "run");
+  assert.match(run, /window\.SiteLoop\.add\(\(dt, now\) => step\(now \/ 1000, dt \/ 60, !covered\(\)\)\);/);
+  assert.match(run, /window\.SiteLoop\.whileVisible\(face, \(dt, now\) => \{\n *if \(covered\(\)\) update3d\(now \/ 1000, dt, false\); else drawFace\(now \/ 1000, dt\);\n *\}\);/);
+});
+
+// Spec AC 1: the turned face is recomputed only when its quantised turn or light changes, and only inside faceBox.
+test("the portrait recomputes the turned face only when its quantised key changes, inside faceBox", () => {
+  const update = fnSource(fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8"), "update3d");
+  assert.match(update, /if \(!build\) return;\n *const key = turnKey\(yaw, pitch, lx, ly, ANGLE_STEP, LIGHT_STEP\);\n *if \(key === built\) return;\n *built = key;\n *const q = v => quantise\(v, ANGLE_STEP\), ql = v => quantise\(v, LIGHT_STEP\);\n *computeBase\(q\(yaw\), q\(pitch\), \[ql\(lx\), ql\(ly\), 1\], faceBox\);\n *\}$/);
+});
+
+// Spec AC 4: fewer bubbles on phones with few cores (bubbleCount, tests/portrait-3d.test.js).
+test("the portrait sizes the bubble stream by the page, the width and the CPU cores", () => {
+  const spawn = fnSource(fs.readFileSync(path.join(__dirname, "../public/portrait.js"), "utf8"), "spawnAll");
+  assert.match(spawn, /const steady = bubbleCount\(docH, VW, navigator\.hardwareConcurrency\);/);
 });
 
 test("under reduced motion the face is drawn once, not again on every scroll", () => {
