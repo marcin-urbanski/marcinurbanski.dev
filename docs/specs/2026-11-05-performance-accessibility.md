@@ -120,7 +120,8 @@ What the numbers mean, from a CPU profile (Chrome, mobile emulation, 4x throttli
 
 Cloudflare Web Analytics (already on) reports Core Web Vitals from real visitors. Seven days after deploy: CLS p75
 at most 0.1 and LCP p75 at most 2.5 s on mobile. On deploy day: a PSI mobile run on production showing CLS ≤ 0.02 and
-no render-blocking requests, and LinkedIn Post Inspector showing the card image for the home page and the post.
+no render-blocking requests other than the site's own `styles.css` (inlining it would need a build step, which
+CODING_STANDARDS rule 1 forbids), and LinkedIn Post Inspector showing the card image for the home page and the post.
 
 ## Reuse
 
@@ -190,3 +191,9 @@ Any visual or copy change; the intro loader's design; a build step or bundler; c
   counts, so nothing shifts; for about 0.6–1 s its gap to the bar shrinks from 24 px to about 8–10 px, and at
   415–420 px it touches the bar's `]` for about one frame. The resting "100" frame matches `main`. Rejected: a 444 px
   breakpoint, which would put the resting "100" on its own line.
+- **AC 11, font cache rule (c6fdef5):** `public/_headers` long-caches `/fonts/*.woff2`, not `/fonts/*`, so the
+  licence file `fonts/OFL.txt` stays revalidated; `tests/headers.test.js` checks it.
+- **AC 8, fallbacks on Android (2026-11-06, Marcin: check after deploy):** the metric-matched fallbacks name
+  `local()` fonts (Arial, Menlo, Courier New, Georgia Italic) that stock Android probably lacks, so Android may show
+  Roboto at its own metrics until the web fonts swap in. Not verified on a device. No Android sources are added now;
+  the seven-day mobile CLS p75 from Evidence of success decides, and a breach gets its own fix.
