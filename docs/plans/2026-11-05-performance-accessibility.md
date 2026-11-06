@@ -174,7 +174,9 @@ Files: new `public/fonts/` (Geist latin and latin-ext, Geist Mono latin, Newsrea
   `"Newsreader Fallback"` (local Georgia Italic) with `size-adjust`, `ascent-override`, `descent-override`,
   `line-gap-override` printed by `tools/font-metrics.py` (fontTools; proportional faces: average advance over Latin
   lowercase + space vs the local font; mono: advance of "M"; overrides = hhea metrics / unitsPerEm / size-adjust).
-  Insert each right after its web font in `--display`/`--mono`/`--serif`. Each fallback `@font-face` carries the same
+  Insert each right after its web font in `--display`/`--mono`/`--serif`. (As built: the proportional average is
+  taken over the site's own visible text with GPOS kerning, because the a–z average left Arial ~6 % too wide and
+  paragraphs gained a line on swap; re-run the script when a font file or much of the copy changes.) Each fallback `@font-face` carries the same
   `unicode-range` as its web font (other glyphs, like → ↗ ●, fall through to today's stack) and the matching style
   and weight: Newsreader Fallback `font-style: italic` over `local("Georgia Italic")`; Geist Fallback two faces,
   `font-weight: 300 499` over `local("Arial")` and `500 700` over `local("Arial Bold")`; Geist Mono Fallback
@@ -203,7 +205,9 @@ Files: `public/styles.css`, maybe `public/effects.js`.
   `font-variant-numeric: tabular-nums` on `.hp-loader-num` (spec decision 3).
 - `.hp-clock-time`: `min-width: 8ch` (it is mono) so the first tick, now on idle, doesn't move the header. Expected
   screenshot difference: in `home-*-nojs.png`, the header's "Southampton" and nav shift by the reserved width; nothing
-  else.
+  else. (Task 4 review: at 1280 px the nav moves 31 px when the clock fills in after paint; this rule fixes it.)
+- Clock (from the task 4 review, minor): `setupClock` starts its interval only when `!document.hidden`; the clock
+  test checks that showing the tab ticks at once and restarts the interval, not only that the words appear.
 - Anything else the observer reports, fixed by reserving space, never by hiding content.
 
 Done check: 5 local Lighthouse runs, each CLS ≤ 0.02; diff "all identical" except the stated nojs header; the
