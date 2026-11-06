@@ -78,10 +78,43 @@ test("every body sentence of the home page is in the markup", () => {
 
 test("sections use the design's headings and labels", () => {
   const h2s = [...html.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map(m => text(m[1]).trim());
-  assert.deepEqual(h2s, ["(01) — about", "Selected work", "Writing", "(04) — contact"]);
+  assert.deepEqual(h2s, ["About", "Selected work", "Writing", "A project, a role, or just a question? Write to me."]);
   for (const s of ["(01) — about", "(02) — 3 projects", "(03) — notes & studies", "back to top ↑"]) {
     assert.ok(bodyText.includes(s), s);
   }
+});
+
+// Spec AC 12: no "(0X) — …" label is a heading. About's heading is visually hidden and its label is hidden from
+// screen readers, so they read "About" once; Contact's heading is the question the section asks.
+test("the About heading is visually hidden and its label is a paragraph screen readers skip", () => {
+  assert.match(html, /<h2 class="hp-sr">About<\/h2>\s*<p class="hp-label hp-approach-label" aria-hidden="true">\(01\) — about<\/p>/);
+});
+
+test("the contact label is a paragraph and the contact lead is the section's heading, in the lead's weight", () => {
+  assert.match(html, /<p class="hp-label" data-io>\(04\) — contact<\/p>\s*<h2 class="hp-contact-lead" data-io>/);
+  assert.match(css, /\.home-page \.hp-contact-lead \{[^}]*font-weight: 400;/);
+});
+
+test("the visually hidden class is a plain rule, usable outside the home page", () => {
+  assert.match(css, /\n\.hp-sr \{ position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset\(50%\); white-space: nowrap; \}/);
+  assert.doesNotMatch(css, /\.home-page \.hp-sr/);
+});
+
+// Spec AC 14: off screen until focused, then at the top left over the cursor (80) and the loader (90).
+test("the skip link stays off screen until focused, then shows at the top left above the loader", () => {
+  const rule = cssRule(".skip");
+  assert.match(rule, /position: fixed;/);
+  assert.match(rule, /left: 12px; top: -100px;/);
+  assert.match(rule, /background: var\(--bg\); color: var\(--ink\);/);
+  assert.match(rule, /font: 400 13px\/normal var\(--mono\);/);
+  assert.match(rule, /min-height: 44px;/);
+  assert.ok(Number(rule.match(/z-index: (\d+)/)[1]) > 90, "z-index above the loader's 90");
+  assert.match(cssRule(".skip:focus"), /top: 12px;/);
+  assert.match(cssRule("main:focus"), /outline: none;/);
+});
+
+test("the header's home link marks the home page as the current page", () => {
+  assert.match(html, /<header class="hp-head">\s*<a href="#top" data-scramble aria-current="page">marcinurbanski\.dev<\/a>/);
 });
 
 test("the writing row keeps its machine-readable date", () => {

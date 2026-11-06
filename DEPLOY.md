@@ -37,6 +37,10 @@ zone; don't add another mail provider's MX records next to them.
 ## Adding a post
 
 1. Copy `public/writing/skip-the-tests/index.html` to `public/writing/<slug>/index.html` and replace the article.
+   Keep what the tests check on every page: the `<a class="skip" href="#main">` skip link first in `<body>`,
+   `<main class="wrap" id="main" tabindex="-1">`, `aria-current="true"` on the header's "writing" link, and any
+   `hello@marcinurbanski.dev` inside `<!--email_off-->` … `<!--/email_off-->` (Cloudflare's Email Obfuscation would
+   otherwise rewrite it into a link that needs JavaScript; local wrangler does not, so only the test shows it).
 2. In `public/index.html`, copy the `<a class="hp-row hp-post" …>` row in `<section class="hp-writing">` and put
    the copy above the others (newest first). Change its `href`, the `<time>` (both `datetime` and the text), the
    `.hp-post-title` and the reading time in `.hp-row-meta`; keep `data-plain` and `data-io`. Then add the post to

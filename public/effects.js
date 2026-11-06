@@ -35,9 +35,9 @@
     loop.add(step);
   }
 
-  // Links and the email ([data-scramble]) scramble on hover; an H2's [data-scramble-part] lines do too, 700ms
-  // each, 90ms apart. The section labels ("(01) — about") carry neither attribute and stay still. Hover effects
-  // are desktop only.
+  // Links and the email ([data-scramble]) scramble on hover; the [data-scramble-part] lines of "Selected work"
+  // and "Writing" do too, 700ms each, 90ms apart. The section labels ("(01) — about"), the hidden About heading
+  // and the contact question carry neither attribute and stay still. Hover effects are desktop only.
   function setupScramble() {
     const hover = matchMedia("(hover: hover)");
     document.querySelectorAll("[data-scramble]").forEach(node => {

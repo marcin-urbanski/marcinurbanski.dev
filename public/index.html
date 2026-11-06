@@ -26,14 +26,15 @@
 <meta property="og:description" content="Designer turned developer. Senior web developer with a designer's eye. I build for the web, and lately with AI agents, testing what actually makes them reliable.">
 <meta property="og:url" content="https://marcinurbanski.dev/">
 <link rel="preload" href="/fonts/geist-latin-v5.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/styles.css?v=70856a06">
+<link rel="stylesheet" href="/styles.css?v=561f5452">
 </head>
 <body class="home-page">
+<a class="skip" href="#main">Skip to content</a>
 
 <canvas id="bubbles" aria-hidden="true"></canvas>
 
 <header class="hp-head">
-  <a href="#top" data-scramble>marcinurbanski.dev</a>
+  <a href="#top" data-scramble aria-current="page">marcinurbanski.dev</a>
   <nav aria-label="Main">
     <a href="#work" data-scramble>work</a>
     <a href="#writing" data-scramble>writing</a>
@@ -42,7 +43,7 @@
   <div class="hp-clock"><span>Southampton</span><span class="hp-clock-time" data-clock></span></div>
 </header>
 
-<main>
+<main id="main" tabindex="-1">
 <section class="hero" id="top">
   <canvas id="face" aria-hidden="true" data-src="/portrait-data.json?v=ed867c2f"></canvas>
   <div class="hp-hero-text">
@@ -60,7 +61,8 @@
 </section>
 
 <section class="hp-approach">
-  <h2 class="hp-label hp-approach-label">(01) — about</h2>
+  <h2 class="hp-sr">About</h2>
+  <p class="hp-label hp-approach-label" aria-hidden="true">(01) — about</p>
   <p class="hp-approach-text" data-words-host><span data-words>I started in 2008 as a graphic designer who thought code was for developers. Seeing my designs come alive changed that: first HTML and CSS, then WordPress, then Laravel, where everything has its place, just like in good design. Today I work across the stack, from WordPress and Laravel to Next.js and AI agents. <em>I still notice when something's off.</em></span></p>
 </section>
 
@@ -176,9 +178,9 @@ specs/          review/</pre>
 </section>
 
 <section class="hp-contact" id="contact">
-  <h2 class="hp-label" data-io>(04) — contact</h2>
-  <p class="hp-contact-lead" data-io>A project, a role, or just a question? <em class="hp-acc">Write to me.</em></p>
-  <a class="hp-mail" id="mail" data-io data-scramble href="mailto:hello@marcinurbanski.dev">hello@marcinurbanski.dev</a>
+  <p class="hp-label" data-io>(04) — contact</p>
+  <h2 class="hp-contact-lead" data-io>A project, a role, or just a question? <em class="hp-acc">Write to me.</em></h2>
+  <!--email_off--><a class="hp-mail" id="mail" data-io data-scramble href="mailto:hello@marcinurbanski.dev">hello@marcinurbanski.dev</a><!--/email_off-->
   <div class="hp-contact-alt" data-io>
     <button type="button" class="hp-copy" id="copy">copy address</button>
     <span>or find me on <a class="hp-ul" href="https://www.linkedin.com/in/marcin-urbanski-70761424/">LinkedIn</a> and <a class="hp-ul" href="https://github.com/marcin-urbanski">GitHub</a></span>
@@ -197,7 +199,7 @@ specs/          review/</pre>
 </footer>
 
 <script defer src="/effects-core.js?v=c05eb4c1"></script>
-<script defer src="/effects.js?v=9e78ecb9"></script>
+<script defer src="/effects.js?v=ea025831"></script>
 <script defer src="/site.js?v=141ea313"></script>
 <script defer src="/portrait-3d.js?v=4afdb3fc"></script>
 <script defer src="/portrait.js?v=f2021677"></script>
