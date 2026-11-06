@@ -52,7 +52,18 @@ test("every link target of the previous home page is still linked", () => {
 
 test("internal links stay relative and open in the same tab", () => {
   assert.doesNotMatch(html, /<a [^>]*href="https:\/\/marcinurbanski\.dev/);
-  assert.doesNotMatch(html, /target="_blank"/);
+  for (const a of html.match(/<a [^>]*href="[/#][^>]*>/g)) assert.doesNotMatch(a, /target=/, a);
+});
+
+// The two project rows leave the site, so they open in a new tab. rel="noopener" without noreferrer, so the
+// projects' own analytics still see marcinurbanski.dev as the referrer; screen readers are told about the new tab.
+test("the claude-skills and TimeRabbit rows open in a new tab and say so", () => {
+  for (const href of ["https://github.com/marcin-urbanski/claude-skills", "https://gettimerabbit.com"]) {
+    const row = html.match(new RegExp(`<a class="hp-row hp-project"[^>]*href="${href}"[^>]*>[\\s\\S]*?</a>`));
+    assert.ok(row, href);
+    assert.match(row[0], /^<a [^>]*target="_blank" rel="noopener"[^>]*>/, href);
+    assert.match(row[0], /<span class="hp-sr">\(opens in a new tab\)<\/span>/, href);
+  }
 });
 
 test("every body sentence of the home page is in the markup", () => {
