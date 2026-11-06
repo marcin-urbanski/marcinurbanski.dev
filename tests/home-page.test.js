@@ -674,3 +674,14 @@ test("the home page's JSON-LD Person matches the page and comes after the head p
   });
   for (const url of ld.sameAs) assert.ok(html.includes(`href="${url}"`), url);
 });
+
+test("the About text links to the longer story outside the label screen readers skip", () => {
+  const about = html.match(/<section class="hp-approach">([\s\S]*?)<\/section>/)[1];
+  assert.match(about, /<p class="hp-label hp-approach-more"><a href="\/writing\/designer-afraid-of-code\/" data-scramble>the longer story →<\/a><\/p>/);
+  assert.doesNotMatch(about.match(/<p [^>]*aria-hidden="true">[\s\S]*?<\/p>/)[0], /<a\b/);
+});
+
+test("Selected work lists projects only, not the career post", () => {
+  const work = html.match(/<section class="hp-work"[\s\S]*?<\/section>/)[0];
+  assert.doesNotMatch(work, /designer-afraid-of-code/);
+});
