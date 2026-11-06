@@ -1,7 +1,8 @@
 // Adds ?v=<hash> to every local script, stylesheet and JSON data URL (src, href or data-src) in the HTML pages in
 // public/; part of the deploy command in DEPLOY.md (tests/asset-versions.test.js fails while a page is out of
-// date). The HTML is served with max-age=0 but the zone lets browsers keep its assets for 4 hours, so a new hash is
-// what makes a returning visitor fetch the new file instead of pairing new HTML with an old script or data.
+// date). The HTML is served with max-age=0 but public/_headers lets browsers keep its scripts, stylesheets and the
+// portrait data for a year, so a new hash is what makes a returning visitor fetch the new file instead of pairing new
+// HTML with an old script or data.
 //
 //     node tools/asset-versions.js
 const crypto = require("node:crypto");

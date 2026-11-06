@@ -31,8 +31,8 @@ test("assetHash is the first 8 hex characters of the file's SHA-256", () => {
   assert.equal(assetHash(file), "ba7816bf");
 });
 
-// After a deploy the HTML is fetched fresh (max-age=0) while the zone lets browsers keep JS and CSS for 4 hours,
-// so each page must point at URLs that change whenever the file does.
+// After a deploy the HTML is fetched fresh (max-age=0) while public/_headers lets browsers keep JS, CSS and the
+// portrait data for a year, so each page must point at URLs that change whenever the file does.
 test("every page links each local script, stylesheet and data file at its current version", () => {
   const pages = htmlFiles(PUBLIC);
   assert.ok(pages.length >= 3, "the home page, 404 and the post");
@@ -63,6 +63,15 @@ test("every font in styles.css exists under a versioned file name", () => {
   for (const url of urls) {
     assert.match(url, /^\/fonts\/[a-z-]+-v\d+\.woff2$/, url);
     assert.ok(fs.existsSync(path.join(PUBLIC, url)), `${url} is missing`);
+  }
+});
+
+// Fonts are cached for a year (public/_headers), so a font a page names (a preload) must be versioned by name too.
+test("every font URL a page names has a version in its file name", () => {
+  for (const page of htmlFiles(PUBLIC)) {
+    for (const [url] of fs.readFileSync(page, "utf8").matchAll(/\/fonts\/[^"'\s)>]*/g)) {
+      assert.match(url, /^\/fonts\/[a-z-]+-v\d+\.woff2$/, `${path.relative(PUBLIC, page)}: ${url}`);
+    }
   }
 });
 

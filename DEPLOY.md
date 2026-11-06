@@ -14,9 +14,15 @@ wrangler pages dev --port 8788    # http://localhost:8788, serves _headers and 4
 node tools/asset-versions.js && node --test tests/ && wrangler pages deploy --branch main
 ```
 
-The zone lets browsers keep static files (JS, CSS, JSON, images) for 4 hours, while HTML is always revalidated.
-The `?v=` hash the tool writes into each script, stylesheet and JSON data URL makes a returning visitor fetch the
-new file after a deploy. An image that changes needs a new file name instead.
+`public/_headers` lets browsers keep scripts, stylesheets, fonts and `portrait-data.json` for a year without asking
+again (`Cache-Control: public, max-age=31536000, immutable`), while HTML is always revalidated. That is safe because
+their URLs change with their content: the `?v=` hash the tool writes into each script, stylesheet and JSON data URL
+makes a returning visitor fetch the new file after a deploy, and fonts carry a version in the file name
+(`geist-latin-v5.woff2`), so a changed font needs a new file name. Everything else (`study-runs.json`, images, feeds)
+keeps the zone's Browser Cache TTL of 4 hours, which applies only where the origin's max-age is lower; an image that
+changes needs a new file name too. After a deploy, check with
+`curl -sI 'https://marcinurbanski.dev/styles.css?v=<hash>'` (the hash from the page source): it shows the year-long
+`Cache-Control` and the `/*` security headers, and `curl -sI https://marcinurbanski.dev/` does not show it.
 
 First deploy (2026-11-04): `wrangler pages project create marcinurbanski --production-branch main`, then the steps
 below in the Cloudflare dashboard.
