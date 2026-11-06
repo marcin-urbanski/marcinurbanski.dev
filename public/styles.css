@@ -139,7 +139,8 @@ html:has(> body.home-page) { scroll-behavior: smooth; }
 .home-page .hp-head a { pointer-events: auto; padding: 6px 0; }
 .home-page .hp-head nav { display: flex; gap: 24px; }
 .home-page .hp-clock { display: flex; gap: 10px; color: var(--muted-2); }
-.home-page .hp-clock-time { color: var(--ink); font-variant-numeric: tabular-nums; }
+/* Room for HH:MM:SS before the first tick, which comes after paint (spec AC 9) */
+.home-page .hp-clock-time { min-width: 8ch; color: var(--ink); font-variant-numeric: tabular-nums; }
 
 /* 2 Hero: text sits over the portrait canvas, bottom-aligned */
 .home-page .hero { position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; padding: 120px var(--home-gutter-r) 24px var(--home-gutter-l); overflow: hidden; }
@@ -235,10 +236,18 @@ html.motion .home-page [data-words].is-lit {
 .home-page .hp-loader { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; justify-content: space-between; padding: 20px var(--home-gutter-r) 28px var(--home-gutter-l); background: var(--bg); font: 400 13px/normal var(--mono); color: var(--muted-2); cursor: pointer; transition: transform 1s var(--ease-wipe); }
 .home-page .hp-loader.is-out { transform: translateY(-100%); }
 .home-page .hp-loader-row { display: flex; justify-content: space-between; gap: 16px; }
-.home-page .hp-loader-foot { align-items: flex-end; flex-wrap: wrap; gap: 24px; }
+/* The number's box never follows its digits, so the bar and the number keep their place as it counts (spec AC 9).
+   Wide, it keeps the room of the widest count ("000", 1.85em) beside the bar, digits at the right; where that room
+   is short (415-444px) it shrinks and the widest counts overflow into the gap. Below 415px, where "100" does not
+   fit beside the bar (2 x 20px gutter + 26ch of 13px mono + 24px gap + 1.54em of 96px), it has a line of its own. */
+.home-page .hp-loader-foot { align-items: flex-end; gap: 24px; }
 .home-page .hp-loader pre { margin: 0; font: inherit; }
 .home-page .hp-loader-bar { color: var(--ink); }
-.home-page .hp-loader-num { font: 300 clamp(96px, 18vw, 280px)/.78 var(--display); letter-spacing: -.05em; color: var(--ink); }
+.home-page .hp-loader-num { flex: 0 1 1.86em; min-width: 0; display: flex; justify-content: flex-end; font: 300 clamp(96px, 18vw, 280px)/.78 var(--display); letter-spacing: -.05em; color: var(--ink); }
+@media (max-width: 414px) {
+  .home-page .hp-loader-foot { flex-wrap: wrap; }
+  .home-page .hp-loader-num { flex-basis: 100%; justify-content: flex-start; }
+}
 
 /* Custom cursor: created by effects.js (not on hover: none), which sets its size and position */
 .home-page .hp-cursor { position: fixed; left: 0; top: 0; z-index: 80; width: 10px; height: 10px; pointer-events: none; background: var(--acc); border: 1px solid var(--acc); transform: translate3d(-100px, -100px, 0); transition: background-color .3s, border-radius .3s; }

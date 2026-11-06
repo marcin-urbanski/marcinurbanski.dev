@@ -342,6 +342,30 @@ test("no rule outside the motion start states hides content", () => {
   }
 });
 
+// The body of the one top-level rule for `sel`.
+const cssRule = sel => {
+  const m = css.match(new RegExp("\\n" + sel.replace(/\./g, "\\.") + " \\{([^}]*)\\}"));
+  assert.ok(m, sel);
+  return m[1];
+};
+
+// Spec AC 9: the number's box comes from the layout, never from its digits, so neither it nor the bar moves as
+// the count changes. Wide, it keeps the room of the widest count ("000" is 1.85em of Newsreader) with its digits
+// at the right; below 415px, where "100" did not fit beside the bar, it always has a line of its own.
+test("the loader number's box does not change with its digits (spec AC 9)", () => {
+  assert.doesNotMatch(cssRule(".home-page .hp-loader-foot"), /flex-wrap/);
+  assert.match(cssRule(".home-page .hp-loader-num"), /flex: 0 1 1\.86em; min-width: 0; display: flex; justify-content: flex-end;/);
+  const block = css.match(/@media \(max-width: 414px\) \{([^@]*?)\n\}/);
+  assert.ok(block, "a max-width: 414px block");
+  assert.match(block[1], /\.home-page \.hp-loader-foot \{ flex-wrap: wrap; \}/);
+  assert.match(block[1], /\.home-page \.hp-loader-num \{ flex-basis: 100%; justify-content: flex-start; \}/);
+});
+
+// Spec AC 9: the first tick fills in eight mono characters (HH:MM:SS), so they have their room before it.
+test("the header clock keeps room for HH:MM:SS before its first tick", () => {
+  assert.match(cssRule(".home-page .hp-clock-time"), /min-width: 8ch;/);
+});
+
 test("reveal on scroll waits until 12% of the element is in view, as playOnce does", () => {
   const js = fs.readFileSync(path.join(__dirname, "../public/effects.js"), "utf8");
   const reveal = js.slice(js.indexOf("function setupReveal"), js.indexOf("function setupLitText"));
@@ -491,12 +515,12 @@ test("effects.js sets up the clock, cursor, preview panel and hover scramble aft
   assert.match(effectsJs, /\n    root\.dataset\.fx = "on";/);
 });
 
-// Spec AC 3: the clock stops while the tab is hidden and catches up at once when it returns.
+// Spec AC 3: the clock stops while the tab is hidden and catches up at once when it returns. tickWhileShown does
+// that (tests/effects-core.test.js); the clock runs only through it.
 test("the header clock stops while the tab is hidden and ticks at once when it is shown again", () => {
   const clock = effectsFn("setupClock");
-  assert.match(clock, /document\.addEventListener\("visibilitychange"/);
-  assert.match(clock, /clearInterval\(/);
-  assert.match(clock, /document\.hidden/);
+  assert.match(clock, /core\.tickWhileShown\(tick, 1000, document, window\);/);
+  assert.doesNotMatch(clock, /setInterval|visibilitychange/);
 });
 
 // Spec AC 6 (as amended): under reduced motion the cursor and the panel follow the pointer from its own events.

@@ -150,6 +150,18 @@
   // requestIdleCallback is missing, so a chain of steps does not wait 200ms between steps.
   function whenIdle(fn, win) { idle(fn, win, 0); }
 
+  // Runs `tick` at once and every `ms` while the tab is shown: it stops while `doc` is hidden and ticks at once when
+  // the tab is shown again. `win` gives the timers; both are passed in so tests can fake them.
+  function tickWhileShown(tick, ms, doc, win) {
+    let timer = 0;
+    const start = () => { tick(); timer = win.setInterval(tick, ms); };
+    doc.addEventListener("visibilitychange", () => {
+      win.clearInterval(timer);
+      if (!doc.hidden) start();
+    });
+    if (!doc.hidden) start();
+  }
+
   // What a keydown does to the intro loader: "close", "close-no-scroll" for a scroll key (the caller also
   // cancels the scroll), or "ignore" for a modifier on its own or a shortcut with Cmd, Ctrl or Alt held.
   const MODIFIERS = ["Meta", "Control", "Alt", "Shift"];
@@ -166,7 +178,7 @@
   const api = {
     scrambleText, easeOutCubic, easeOutQuart, easeInOutQuad, loaderState, formatCount, countFrame, runsFrame,
     litPercent, londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, decayVelocityMs, frameDt,
-    createLoop, afterPaint, whenIdle, loaderKey, inView, COUNT_MS, RUNS_MS
+    createLoop, afterPaint, whenIdle, tickWhileShown, loaderKey, inView, COUNT_MS, RUNS_MS
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.EffectsCore = api;

@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const {
   scrambleText, easeOutCubic, easeOutQuart, easeInOutQuad, loaderState, formatCount, countFrame, runsFrame,
   litPercent, londonTime, stripStep, stripSkew, previewPos, lerp, decayVelocity, decayVelocityMs, frameDt,
-  createLoop, afterPaint, whenIdle, loaderKey, inView, COUNT_MS, RUNS_MS
+  createLoop, afterPaint, whenIdle, tickWhileShown, loaderKey, inView, COUNT_MS, RUNS_MS
 } = require("../public/effects-core.js");
 
 const near = (a, b, eps = 1e-9) => Math.abs(a - b) < eps;
@@ -540,6 +540,58 @@ test("afterPaint falls back to a 200ms timer after the frame without requestIdle
   assert.equal(ran, 0);
   w.idle();
   assert.equal(ran, 1);
+});
+
+// A fake tab for tickWhileShown: `show(hidden)` flips document.hidden and fires visibilitychange; ticks and
+// timer calls go to one log, in order.
+function fakeTab(hidden) {
+  const log = [];
+  let onChange = null, ids = 0;
+  const doc = {
+    hidden,
+    addEventListener: (type, fn) => { if (type === "visibilitychange") onChange = fn; }
+  };
+  const win = {
+    setInterval: (fn, ms) => { ids++; log.push(["start", ids, ms]); return ids; },
+    clearInterval: id => log.push(["stop", id])
+  };
+  return { doc, win, log, tick: () => log.push("tick"), show: h => { doc.hidden = h; onChange(); } };
+}
+
+test("tickWhileShown ticks at once and starts the interval on a shown tab", () => {
+  const t = fakeTab(false);
+  tickWhileShown(t.tick, 1000, t.doc, t.win);
+  assert.deepEqual(t.log, ["tick", ["start", 1, 1000]]);
+});
+
+test("tickWhileShown neither ticks nor starts the interval on a hidden tab", () => {
+  const t = fakeTab(true);
+  tickWhileShown(t.tick, 1000, t.doc, t.win);
+  assert.deepEqual(t.log, []);
+});
+
+test("tickWhileShown stops the interval when the tab is hidden", () => {
+  const t = fakeTab(false);
+  tickWhileShown(t.tick, 1000, t.doc, t.win);
+  t.log.length = 0;
+  t.show(true);
+  assert.deepEqual(t.log, [["stop", 1]]);
+});
+
+test("tickWhileShown ticks at once and restarts the interval when the tab is shown again", () => {
+  const t = fakeTab(false);
+  tickWhileShown(t.tick, 1000, t.doc, t.win);
+  t.show(true);
+  t.log.length = 0;
+  t.show(false);
+  assert.deepEqual(t.log, [["stop", 1], "tick", ["start", 2, 1000]]);
+});
+
+test("tickWhileShown starts on the first show of a tab opened hidden", () => {
+  const t = fakeTab(true);
+  tickWhileShown(t.tick, 1000, t.doc, t.win);
+  t.show(false);
+  assert.deepEqual(t.log, [["stop", 0], "tick", ["start", 1, 1000]]);
 });
 
 test("whenIdle runs the callback from an idle callback with a 1s timeout, without waiting for a frame", () => {

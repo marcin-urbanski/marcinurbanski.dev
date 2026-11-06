@@ -69,14 +69,8 @@
   function setupClock() {
     const clock = document.querySelector("[data-clock]");
     if (!clock) return;
-    let timer = 0;
     const tick = () => { clock.textContent = core.londonTime(new Date()); };
-    const start = () => { tick(); timer = setInterval(tick, 1000); };
-    document.addEventListener("visibilitychange", () => {
-      clearInterval(timer);
-      if (!document.hidden) start();
-    });
-    start();
+    core.tickWhileShown(tick, 1000, document, window);
   }
 
   // README "Custom cursor": a 10px accent square that follows the pointer at .25 and grows to a 56px circle
