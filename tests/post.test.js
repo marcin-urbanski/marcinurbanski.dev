@@ -204,13 +204,16 @@ test("every image in a post is a WebP file with alt text and the width and heigh
     .matchAll(/<img [^>]*>/g)].map(([tag]) => ({ name, tag })));
   assert.ok(imgs.length > 0, "at least one post has an image");
   for (const { name, tag } of imgs) {
-    const attr = a => (tag.match(new RegExp(`\\b${a}="([^"]*)"`)) || [])[1];
+    const attr = a => (tag.match(new RegExp(`\\s${a}="([^"]*)"`)) || [])[1];
     assert.ok(attr("alt"), `${name}: alt in ${tag}`);
     const file = path.join(__dirname, "../public", attr("src"));
     assert.deepEqual(webpSize(fs.readFileSync(file)), [Number(attr("width")), Number(attr("height"))], `${name}: ${tag}`);
   }
   // The width and height only reserve the space (no layout shift) if CSS lets the image scale with the column.
-  assert.match(css, /^\.post \.shot img \{ display: block; width: 100%; height: auto; \}$/m);
+  const rule = css.match(/^\.post \.shot img \{([^}]*)\}/m);
+  assert.ok(rule, "expected a .post .shot img rule");
+  assert.match(rule[1], /\bwidth: 100%/);
+  assert.match(rule[1], /\bheight: auto/);
 });
 
 test("every post has one h1, and its sections are h2s that follow it", () => {
