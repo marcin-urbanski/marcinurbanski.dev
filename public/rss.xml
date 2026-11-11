@@ -6,7 +6,14 @@
     <atom:link href="https://marcinurbanski.dev/rss.xml" rel="self" type="application/rss+xml"/>
     <description>Writing on building apps with AI agents and testing what actually makes them reliable.</description>
     <language>en</language>
-    <lastBuildDate>Fri, 06 Nov 2026 12:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 11 Nov 2026 12:00:00 +0000</lastBuildDate>
+    <item>
+      <title>TimeRabbit: the first app I built with a team of agents</title>
+      <link>https://marcinurbanski.dev/writing/building-timerabbit-with-agents/</link>
+      <guid isPermaLink="true">https://marcinurbanski.dev/writing/building-timerabbit-with-agents/</guid>
+      <pubDate>Wed, 11 Nov 2026 12:00:00 +0000</pubDate>
+      <description>How I partly handed over the wheel to AI agents working under my rules, what they did well, and what I still had to do myself.</description>
+    </item>
     <item>
       <title>The designer who was afraid of code</title>
       <link>https://marcinurbanski.dev/writing/designer-afraid-of-code/</link>
