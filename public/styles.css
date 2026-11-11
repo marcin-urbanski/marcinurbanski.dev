@@ -92,6 +92,10 @@ header.top .home { color: var(--ink); text-decoration: none; }
 .post strong { font-weight: 600; }
 .post code { font: 400 .84em/1 var(--mono); padding: .12em .32em; background: var(--surface); overflow-wrap: anywhere; }
 
+/* Screenshot: a figure the width of the column; its width and height attributes reserve the space */
+.post .shot { margin: 32px 0 40px; }
+.post .shot img { display: block; width: 100%; height: auto; }
+
 /* Chart: two small multiples, bars out of 30 */
 .chart { margin: 32px 0 40px; }
 .panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; }
@@ -106,7 +110,7 @@ header.top .home { color: var(--ink); text-decoration: none; }
 .chart .hit { fill: transparent; }
 .chart .row:hover .bar { fill: var(--ink-bright); }
 .chart .row:hover .setup { fill: var(--ink); }
-.chart figcaption { margin-top: 20px; font: 400 13px/1.6 var(--mono); color: var(--muted-2); }
+.chart figcaption, .post .shot figcaption { margin-top: 20px; font: 400 13px/1.6 var(--mono); color: var(--muted-2); }
 .chart details { margin-top: 14px; font: 400 13px/1.6 var(--mono); color: var(--muted-2); }
 .chart summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 8px; color: var(--ink); }
 .chart summary::-webkit-details-marker { display: none; }

@@ -192,6 +192,27 @@ test("sitemap.xml lists the home page and every post", () => {
   assert.deepEqual(locs.sort(), ["https://marcinurbanski.dev/", ...byDate.map(p => p.url)].sort());
 });
 
+// A post's screenshots are WebP files that cwebp writes with an alpha channel, so a VP8X header: the canvas width
+// and height, each minus one, as 24-bit little-endian numbers at bytes 24 and 27.
+const webpSize = buf => {
+  assert.equal(buf.toString("latin1", 0, 4) + buf.toString("latin1", 8, 16), "RIFFWEBPVP8X", "WebP with a VP8X header");
+  return [buf.readUIntLE(24, 3) + 1, buf.readUIntLE(27, 3) + 1];
+};
+
+test("every image in a post is a WebP file with alt text and the width and height it really has", () => {
+  const imgs = posts.flatMap(name => [...page(name).match(/<article class="post">([\s\S]*?)<\/article>/)[1]
+    .matchAll(/<img [^>]*>/g)].map(([tag]) => ({ name, tag })));
+  assert.ok(imgs.length > 0, "at least one post has an image");
+  for (const { name, tag } of imgs) {
+    const attr = a => (tag.match(new RegExp(`\\b${a}="([^"]*)"`)) || [])[1];
+    assert.ok(attr("alt"), `${name}: alt in ${tag}`);
+    const file = path.join(__dirname, "../public", attr("src"));
+    assert.deepEqual(webpSize(fs.readFileSync(file)), [Number(attr("width")), Number(attr("height"))], `${name}: ${tag}`);
+  }
+  // The width and height only reserve the space (no layout shift) if CSS lets the image scale with the column.
+  assert.match(css, /^\.post \.shot img \{ display: block; width: 100%; height: auto; \}$/m);
+});
+
 test("every post has one h1, and its sections are h2s that follow it", () => {
   for (const name of posts) {
     const article = page(name).match(/<article class="post">([\s\S]*?)<\/article>/)[1];

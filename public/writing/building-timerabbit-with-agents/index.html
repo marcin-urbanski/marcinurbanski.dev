@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TimeRabbit: the first app I built with a team of agents · Marcin Urbanski</title>
+<meta name="description" content="How I partly handed over the wheel to AI agents working under my rules, what they did well, and what I still had to do myself.">
+<link rel="canonical" href="https://marcinurbanski.dev/writing/building-timerabbit-with-agents/">
+<link rel="alternate" type="application/rss+xml" title="Marcin Urbanski" href="https://marcinurbanski.dev/rss.xml">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0a0a09">
+<meta name="author" content="Marcin Urbanski">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TimeRabbit: the first app I built with a team of agents">
+<meta property="og:description" content="How I partly handed over the wheel to AI agents working under my rules, and what I still had to do myself.">
+<meta property="og:url" content="https://marcinurbanski.dev/writing/building-timerabbit-with-agents/">
+<meta property="article:published_time" content="2026-11-11">
+<meta property="og:image" content="https://marcinurbanski.dev/og/building-timerabbit-with-agents.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The post’s title, “TimeRabbit: the first app I built with a team of agents”, with its date and summary.">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "TimeRabbit: the first app I built with a team of agents",
+  "description": "How I partly handed over the wheel to AI agents working under my rules, what they did well, and what I still had to do myself.",
+  "datePublished": "2026-11-11",
+  "author": { "@type": "Person", "@id": "https://marcinurbanski.dev/#person", "name": "Marcin Urbanski", "url": "https://marcinurbanski.dev/" },
+  "url": "https://marcinurbanski.dev/writing/building-timerabbit-with-agents/",
+  "mainEntityOfPage": "https://marcinurbanski.dev/writing/building-timerabbit-with-agents/",
+  "image": "https://marcinurbanski.dev/og/building-timerabbit-with-agents.jpg"
+}
+</script>
+<link rel="stylesheet" href="/styles.css?v=5edad88d">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="wrap">
+  <header class="top">
+    <a class="home" href="/">marcinurbanski.dev</a>
+    <nav aria-label="Main">
+      <a href="/#work">work</a>
+      <a href="/#writing" aria-current="true">writing</a>
+      <a href="/#contact">contact</a>
+    </nav>
+  </header>
+</div>
+
+<main class="wrap" id="main" tabindex="-1">
+  <article class="post">
+    <p class="post-meta"><time datetime="2026-11-11">11 Nov 2026</time><span>agents</span><span>4 min</span></p>
+    <h1>TimeRabbit: the first app I built with a team of agents</h1>
+    <p class="dek">How I partly handed over the wheel to AI agents working under my rules, what they did well, and what I still had to do myself.</p>
+
+    <p>TimeRabbit is a native macOS time tracker. It’s also the first app where I didn’t write most of the code myself.</p>
+    <p>I partly handed over the wheel to a team of AI agents. They worked under my rules: write the spec first, write the test before the code, get your work reviewed by someone else. I decided what we were building, set the standards, and checked the result. Thirty-two days after the first message I had a signed app I use every day.</p>
+    <p>This is what working with that team was like.</p>
+
+    <h2>Why build it at all</h2>
+    <p>At work I use automatic time-tracking software. It does the job, but two things kept bothering me. Tasks my colleagues added in Teamwork took hours to appear, until I synced everything by hand. And the interface felt like a developer’s app: there was a design idea, but it wasn’t carried all the way through. I wanted something that looked good and where you find what you need without stopping to think.</p>
+    <p>So I decided to build my own.</p>
+
+    <h2>Meet the team</h2>
+    <p>Every project with agents starts the same way it would with people: onboarding. Mine is a <code>CLAUDE.md</code> file and a set of <a href="https://github.com/marcin-urbanski/claude-skills">process skills</a>, the rules the team works by.</p>
+    <p>The team had clear roles:</p>
+    <ul>
+      <li><strong>The planner</strong>, the main session following a spec-first skill, turned each feature into a written spec and plan. Nothing got built until I’d approved it.</li>
+      <li><strong>The implementer</strong> wrote a failing test first, then the code to make it pass.</li>
+      <li><strong>The reviewer</strong> checked every change. It saw the task and the code, but not the implementer’s reasoning, so it had to judge what the change actually did, not what it was meant to do.</li>
+    </ul>
+    <p>My job was everything they couldn’t decide for me: what the app should do, in what order, how it should feel. And testing it on a real Mac, every day.</p>
+
+    <h2>The team was fast</h2>
+    <p>The first working piece, recording what I do on my Mac, was committed about 45 minutes after I started. The Teamwork integration came half an hour later. By the first signed release the team had written about 1,600 tests, and today there are over 2,200. There is more test code in TimeRabbit than code being tested.</p>
+    <p>The hard part was knowing whether what came back actually worked.</p>
+
+    <h2>The team didn’t know what I knew</h2>
+    <p>My first question was which technology to use: NativePHP or Tauri, two ways to build one app for macOS and Windows. The agent picked Tauri, with good reasons: it needs a fraction of the memory. Then I mentioned I don’t own a Windows machine. Every computer I have is a Mac.</p>
+    <p>The answer changed straight away: if I can only test on a Mac, cross-platform is a promise I can’t check. We went native, with Swift. The whole U-turn took six minutes.</p>
+    <p>The agent had the reasoning. I had the context. That turned out to be true for the whole project.</p>
+
+    <h2>“Done” didn’t always mean done</h2>
+    <p>I asked for a small thing: clicking Today should scroll the timeline so the current time is in the middle.</p>
+    <p>By then the team could already see the app. Earlier in the project I’d given them a script that launches it and takes a screenshot, and a rule to run the app and check the result themselves instead of telling me it’s done. The agent did both. One screenshot looked right. Another, taken with the clock at 16:40, showed the timeline at 7:30–9:10. The agent found a plausible explanation, marked it “not verified”, and the change was reviewed and merged with every test green.</p>
+    <p>On my Mac it didn’t work. At 16:40 the window was centred on 8:20, halfway between midnight and now.</p>
+    <figure class="shot">
+      <img src="/writing/building-timerabbit-with-agents/today-before.webp" width="1392" height="932" loading="lazy" decoding="async" alt="TimeRabbit’s Day view at 16:40, opened on 7:30–9:10, with the current time nowhere on screen">
+      <figcaption>Before: at 16:40, Today opened the timeline on 7:30–9:10.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="/writing/building-timerabbit-with-agents/today-after.webp" width="1392" height="932" loading="lazy" decoding="async" alt="The same Day view after the fix, opened on 15:50–17:30 with the red 16:40 line in the middle">
+      <figcaption>After the fix: the same moment, with now in the middle.</figcaption>
+    </figure>
+    <p>Passing tests are evidence, not proof. That’s the same lesson as my <a href="/writing/skip-the-tests/">study on skipping tests</a>, from the other side. And a screenshot that contradicts the result isn’t something to explain away. It’s a reason to stop.</p>
+
+    <h2>A rule only counts where it’s written</h2>
+    <p>At one point the reviewer was copying the whole project, build files included, every time it checked a change. The copies grew to around 60 GB, the disk filled up and all work stopped.</p>
+    <p>I fixed it. Six days later it happened again. The rule was in the implementer’s instructions, but not the reviewer’s.</p>
+    <p>Agents don’t pass knowledge to each other in the corridor. If a rule isn’t written where a team member will read it, it doesn’t exist for them.</p>
+
+    <h2>Mistakes became team rules</h2>
+    <p>Like with any team, the same mistakes kept coming back in review. So they became a coding standards document, and each rule keeps a count of how many times it was caught. The top one was comments that no longer described the code: 11 times. Two others were about time itself: a running timer counted as zero, an hour landing on the wrong day. Fitting, for a time tracker.</p>
+    <p>The project changed my skills too. The test-first rule now applies even to a “quick fix”, the full test suite runs even when someone says a few tests are enough, and every spec has to say how we’ll know it works.</p>
+
+    <h2>The part I kept</h2>
+    <p>Design I didn’t hand over.</p>
+    <p>The name came after rejecting dozens of ideas: TimeRabbit, after the White Rabbit from <em>Alice in Wonderland</em>, the one with the pocket watch who’s always late. The logo followed from it, a clock whose hands become the rabbit’s ears. I drew the concept by hand, and it became the app’s launch animation.</p>
+
+    <h2>What I learned</h2>
+    <p>Working with agents is a lot like working with a team. They’re quick, they follow the rules you give them, and they don’t know what you haven’t told them.</p>
+    <p>The code is the easy part now. My job was to decide what we’re building, write down how we work, and keep checking whether “done” really meant done. When it didn’t, the fix was rarely in the code. It was in the rules.</p>
+    <p>More about TimeRabbit at <a href="https://gettimerabbit.com">gettimerabbit.com</a>.</p>
+  </article>
+
+  <footer>
+    <span>© 2026 Marcin Urbanski</span>
+    <nav aria-label="Elsewhere">
+      <a href="https://github.com/marcin-urbanski">GitHub</a>
+      <a href="https://www.linkedin.com/in/marcin-urbanski-70761424/">LinkedIn</a>
+      <a href="/rss.xml">RSS</a>
+    </nav>
+  </footer>
+</main>
+
+</body>
+</html>
