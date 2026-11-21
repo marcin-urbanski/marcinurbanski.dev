@@ -30,7 +30,8 @@
   const update = () => {
     frame = 0;
     const box = post.getBoundingClientRect(), p = C.readingProgress(box.top, box.height, innerHeight);
-    const i = C.currentHeading(heads.map(h => h.getBoundingClientRect().top), LINE, p);
+    const atEnd = scrollY + innerHeight >= document.documentElement.scrollHeight - 2;
+    const i = C.currentHeading(heads.map(h => h.getBoundingClientRect().top), LINE, atEnd);
     const s = i < 0 ? -1 : sectionOf[i];
     links.forEach((a, j) => {
       a.classList.toggle("is-on", j === i || j === sectionLink[s]);

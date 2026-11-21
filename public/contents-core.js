@@ -5,10 +5,10 @@
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
   // Index of the last heading whose top (from the top of the viewport) is at or above `line`; -1 before the first.
-  // Once `progress` reaches 1 it is the last heading, which a short last section on a tall screen never brings up
-  // to the line.
-  function currentHeading(tops, line, progress) {
-    if (progress >= 1 && tops.length) return tops.length - 1;
+  // Once the page can scroll no further (`atEnd`) it is the last heading, which a short last section on a tall
+  // screen never brings up to the line.
+  function currentHeading(tops, line, atEnd) {
+    if (atEnd && tops.length) return tops.length - 1;
     let current = -1;
     tops.forEach((top, i) => { if (top <= line) current = i; });
     return current;
