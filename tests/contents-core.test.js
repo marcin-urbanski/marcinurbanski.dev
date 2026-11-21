@@ -23,6 +23,11 @@ test("currentHeading at the page's end is the heading the reader jumped to, if a
   assert.equal(currentHeading([-3000, 82, 400], 120, true, -1), 2);
 });
 
+// After a jump the reader may reach the end with the scrollbar, which leaves the jump unchanged.
+test("currentHeading at the page's end ignores a jump whose heading has scrolled above the viewport", () => {
+  assert.equal(currentHeading([-5466, 62, 457], 120, true, 0), 2);
+});
+
 test("currentHeading ignores the jump away from the page's end", () => {
   assert.equal(currentHeading([-3000, -900, 90], 120, false, 0), 2);
 });

@@ -6,10 +6,10 @@
 
   // Index of the last heading whose top (from the top of the viewport) is at or above `line`; -1 before the first.
   // Once the page can scroll no further (`atEnd`) it is the last heading, which a short last section on a tall
-  // screen never brings up to the line, unless the reader jumped to a heading (`jumped`, its index): a jump to a late
-  // section can stop at the page's end too.
+  // screen never brings up to the line, unless the reader jumped to a heading (`jumped`, its index) that is still on
+  // screen: a jump to a late section can stop at the page's end too.
   function currentHeading(tops, line, atEnd, jumped) {
-    if (atEnd && tops.length) return jumped >= 0 && jumped < tops.length ? jumped : tops.length - 1;
+    if (atEnd && tops.length) return jumped >= 0 && jumped < tops.length && tops[jumped] >= 0 ? jumped : tops.length - 1;
     let current = -1;
     tops.forEach((top, i) => { if (top <= line) current = i; });
     return current;

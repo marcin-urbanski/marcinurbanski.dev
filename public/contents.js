@@ -52,10 +52,17 @@
   addEventListener("scroll", schedule, { passive: true });
   addEventListener("resize", schedule);
   const jump = hash => { jumped = indexOf(hash); schedule(); };
-  nav.addEventListener("click", e => { const a = e.target.closest("a[href^='#']"); if (a) jump(a.hash); });
+  nav.addEventListener("click", e => {
+    const a = e.target.closest("a[href^='#']");
+    // A modified click opens a new tab or window and leaves this page where it is.
+    if (a && e.button === 0 && !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)) jump(a.hash);
+  });
   addEventListener("hashchange", () => jump(location.hash));
   const byHand = () => { if (jumped >= 0) { jumped = -1; schedule(); } };
-  for (const type of ["wheel", "touchmove", "keydown"]) addEventListener(type, byHand, { passive: true });
+  addEventListener("wheel", byHand, { passive: true });
+  addEventListener("touchmove", byHand, { passive: true });
+  const SCROLL_KEYS = [" ", "PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown"];
+  addEventListener("keydown", e => { if (SCROLL_KEYS.includes(e.key)) byHand(); });
   const fit = () => { if (wide.matches) details.open = true; schedule(); };
   wide.addEventListener("change", fit);
   fit();
