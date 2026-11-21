@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { currentHeading, atPageEnd, readingProgress, readingBar, minutesLeft } = require("../public/contents-core.js");
+const { currentHeading, atPageEnd, keptJump, readingProgress, readingBar, minutesLeft } = require("../public/contents-core.js");
 
 // Heading tops are measured from the top of the viewport; the reading line sits a little below it.
 test("currentHeading is -1 while every heading is still below the reading line", () => {
@@ -30,6 +30,18 @@ test("currentHeading at the page's end ignores a jump whose heading has scrolled
 
 test("currentHeading ignores the jump away from the page's end", () => {
   assert.equal(currentHeading([-3000, -900, 90], 120, false, 0), 2);
+});
+
+// A jump to a late section stops at the page's end; once the reader leaves the end, the jump has done its job.
+test("keptJump forgets the jump once the page leaves its end", () => {
+  assert.equal(keptJump(1, true, false), -1);
+});
+
+test("keptJump keeps the jump while the page stays at its end or has not reached it yet", () => {
+  assert.equal(keptJump(1, true, true), 1);
+  assert.equal(keptJump(1, false, false), 1);
+  assert.equal(keptJump(1, false, true), 1);
+  assert.equal(keptJump(-1, true, false), -1);
 });
 
 test("atPageEnd is true once the page can scroll no further, allowing for fractional scroll", () => {

@@ -39,7 +39,12 @@
     return scrollY + viewport >= scrollHeight - 2;
   }
 
-  const api = { currentHeading, atPageEnd, readingProgress, readingBar, minutesLeft };
+  // The jump to remember after a scroll: a jump that stopped at the page's end is done once the page leaves the end.
+  function keptJump(jumped, wasAtEnd, atEnd) {
+    return wasAtEnd && !atEnd ? -1 : jumped;
+  }
+
+  const api = { currentHeading, atPageEnd, keptJump, readingProgress, readingBar, minutesLeft };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Contents = api;
 })(this);

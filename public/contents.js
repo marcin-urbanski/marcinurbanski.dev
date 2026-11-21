@@ -26,13 +26,16 @@
   const [on, off] = bar.querySelectorAll(".post-toc-hashes span"), [pct, left] = bar.querySelectorAll(".post-toc-meta span");
 
   const wide = matchMedia("(min-width: 1000px)");
-  // The heading the reader last jumped to (a contents link or the address's #), until they scroll by hand.
+  // The heading the reader last jumped to (a contents link or the address's #), until they scroll by hand or the page
+  // leaves its end after the jump stopped there.
   const indexOf = hash => links.findIndex(a => a.hash === hash);
-  let jumped = indexOf(location.hash), frame = 0;
+  let jumped = indexOf(location.hash), wasAtEnd = false, frame = 0;
   const update = () => {
     frame = 0;
     const box = post.getBoundingClientRect(), p = C.readingProgress(box.top, box.height, innerHeight);
     const atEnd = C.atPageEnd(scrollY, innerHeight, document.documentElement.scrollHeight);
+    jumped = C.keptJump(jumped, wasAtEnd, atEnd);
+    wasAtEnd = atEnd;
     const i = C.currentHeading(heads.map(h => h.getBoundingClientRect().top), LINE, atEnd, jumped);
     const s = i < 0 ? -1 : sectionOf[i];
     links.forEach((a, j) => {
