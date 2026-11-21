@@ -34,7 +34,9 @@
   "image": "https://marcinurbanski.dev/og/designer-afraid-of-code.jpg"
 }
 </script>
-<link rel="stylesheet" href="/styles.css?v=5edad88d">
+<link rel="stylesheet" href="/styles.css?v=f68c33fc">
+<script src="/contents-core.js?v=359bdfcc" defer></script>
+<script src="/contents.js?v=ff20885a" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -55,44 +57,75 @@
     <p class="post-meta"><time datetime="2026-11-06">6 Nov 2026</time><span>career</span><span>3 min</span></p>
     <h1>The designer who was afraid of code</h1>
     <p class="dek">How a graphic designer who swore code wasn’t for him ended up a senior developer, and why design still shapes how I build.</p>
+    <nav class="post-toc" aria-label="Contents">
+      <details>
+        <summary>contents <span>· 7 sections · 3 min</span></summary>
+        <ol>
+          <li><a href="#code-was-for-developers"><span class="hx" aria-hidden="true">#</span><span>Code was for developers</span><span class="ts">0:21</span></a></li>
+          <li><a href="#the-thing-that-changed-my-mind"><span class="hx" aria-hidden="true">#</span><span>The thing that changed my mind</span><span class="ts">0:59</span></a></li>
+          <li><a href="#what-i-brought-with-me"><span class="hx" aria-hidden="true">#</span><span>What I brought with me</span><span class="ts">1:24</span></a></li>
+          <li><a href="#wordpress-then-the-back-end"><span class="hx" aria-hidden="true">#</span><span>WordPress, then the back end</span><span class="ts">1:58</span></a></li>
+          <li><a href="#everything-has-its-place"><span class="hx" aria-hidden="true">#</span><span>Everything has its place</span><span class="ts">2:23</span></a></li>
+          <li><a href="#a-pocket-stack-overflow"><span class="hx" aria-hidden="true">#</span><span>A pocket Stack Overflow</span><span class="ts">2:56</span></a></li>
+          <li><a href="#still-a-designer"><span class="hx" aria-hidden="true">#</span><span>Still a designer</span><span class="ts">3:30</span></a></li>
+        </ol>
+      </details>
+    </nav>
 
     <p>My first job had nothing to do with design or code. I worked in IT recruitment in Wrocław, searching databases and phoning candidates, trying to find developers for other companies. I spent over two years doing it. I never once imagined I would become one.</p>
 
-    <h2>Code was for developers</h2>
+    <h2 id="code-was-for-developers">Code was for developers</h2>
     <p>In 2008 I started as a graphic designer at an advertising agency. Brand work, print, marketing materials, email campaigns for clients like BMW and MINI. Some of those campaigns and websites needed HTML and CSS, so I wrote it. Not because I wanted to, but because someone had to and I was there.</p>
     <p>I was very clear with myself about where the line was. I was a designer. Code was a job for developers. If you’d asked me back then, I’d have told you I didn’t like coding at all.</p>
     <p>For the next few years, first in Poland and then after moving to the UK, I kept designing. Freelance work, then in-house roles. Layouts, brand assets, marketing pages. And, more and more often, building the websites I’d designed, because it was quicker than handing them over and explaining what I meant.</p>
 
-    <h2>The thing that changed my mind</h2>
+    <h2 id="the-thing-that-changed-my-mind">The thing that changed my mind</h2>
     <p>It wasn’t the code itself that hooked me. It was what happened after.</p>
     <p>A design file sits on your screen. Only you and the client see it. A website is different. Someone else opens it, clicks through it, uses it. The thing you drew is suddenly alive, and it’s out of your hands.</p>
     <p>Once I’d felt that a few times, I wanted more of it. Each project I spent a bit less time drawing and a bit more time building. In 2018 I made it official and became a front-end developer.</p>
 
-    <h2>What I brought with me</h2>
+    <h2 id="what-i-brought-with-me">What I brought with me</h2>
     <p>Design gave me one habit that never left: an eye for detail.</p>
     <p>I can’t always explain it. I just see when something is off. Spacing that isn’t quite even. A font a size too big. A button that’s slightly out of line with the text above it. A form that’s harder to fill in than it should be. It bothers me until it’s fixed.</p>
     <p>It turned out the same thing happens with code. Messy code bothers me in the same way a misaligned layout does. I wanted mine to be clean, consistent, and easy for the next person to read. Good design is mostly about care for whoever comes after you, the user or the next designer opening the file. Good code is the same.</p>
 
-    <h2>WordPress, then the back end</h2>
+    <h2 id="wordpress-then-the-back-end">WordPress, then the back end</h2>
     <p>Front end led to WordPress, properly this time. Not just setting up themes and plugins, but writing my own: my first plugins, custom functions, fully custom builds. Then WooCommerce, with its own checkout flows, shipping logic and integrations, where small details decide whether someone finishes paying or leaves.</p>
     <p>That was the point where I stopped being a designer who could code and became a developer who could design. The interesting problems were no longer only on the screen. They were in the data, the queries, the logic behind the page.</p>
 
-    <h2>Everything has its place</h2>
+    <h2 id="everything-has-its-place">Everything has its place</h2>
     <p>I tried CodeIgniter for a while. It was a short story.</p>
     <p>Laravel came along almost by accident. What caught my attention first was practical: I didn’t have to write everything myself. But what kept me was something else. In Laravel everything has its place. Routes, models, controllers, views, each one where you’d expect it. Open a Laravel project you’ve never seen and you can usually find your way around.</p>
     <p>That’s exactly what good design does. A clear structure, a consistent system, nothing left lying around. It felt familiar.</p>
     <p>My first real Laravel project was a rebuild of the asset management system at the company I work for. It started as a training project, something to learn on. It taught me more than any tutorial.</p>
 
-    <h2>A pocket Stack Overflow</h2>
+    <h2 id="a-pocket-stack-overflow">A pocket Stack Overflow</h2>
     <p>Then the first AI models that could write usable code arrived. At the start I treated them like a pocket Stack Overflow. Ask a question, get a snippet, check it, adapt it.</p>
     <p>That changed quickly. Today I work with coding agents that write whole features under my rules, my tests and my review. Which brought me back to the same old question, just in a new place: how do I know the result is right?</p>
     <p>So I do what I’ve always done. Reproduce, measure, fix the cause. I’ve started testing what actually makes these agents reliable, and writing up what I find. <a href="/writing/skip-the-tests/">The first study</a> ran 1,080 times across three models to see what happens when you tell an agent to skip the tests.</p>
 
-    <h2>Still a designer</h2>
+    <h2 id="still-a-designer">Still a designer</h2>
     <p>Today I’m a senior web developer working across the stack, from WordPress and Laravel to Next.js and AI agents. It’s a long way from writing HTML only because someone had to.</p>
     <p>But design is still where I start. When I look at a page, a pull request or an agent’s output, I still notice when something’s off. I think that’s the most useful thing I brought with me, and the reason I don’t want to leave it behind.</p>
     <p>If you’re a designer who’s sure code isn’t for you: I was too. Build one small thing and see someone else use it. That’s what got me.</p>
   </article>
+
+  <section class="more-writing" aria-labelledby="more-writing">
+    <div class="more-writing-head">
+      <h2 class="hp-label" id="more-writing">(more writing)</h2>
+      <a href="/#writing">all writing →</a>
+    </div>
+    <a class="hp-row hp-post" data-plain href="/writing/building-timerabbit-with-agents/">
+      <time datetime="2026-11-11">11 Nov 2026</time>
+      <h3 class="hp-post-title">TimeRabbit: the first app I built with a team of agents</h3>
+      <span class="hp-row-meta"><span>4 min</span><span>→</span></span>
+    </a>
+    <a class="hp-row hp-post" data-plain href="/writing/skip-the-tests/">
+      <time datetime="2026-11-04">4 Nov 2026</time>
+      <h3 class="hp-post-title">What happens when you tell a coding agent to skip the tests?</h3>
+      <span class="hp-row-meta"><span>8 min</span><span>→</span></span>
+    </a>
+  </section>
 
   <footer>
     <span>© 2026 Marcin Urbanski</span>
