@@ -129,8 +129,9 @@ header.top .home { color: var(--ink); text-decoration: none; }
 
 /* Contents: one <details> per post, after the summary. Narrow, a folded "+ contents" line with the minute each
    section starts at. From 1000px a sticky column left of the text (contents.js opens it): the post moves right just
-   enough for the column and is centred again once both sides have room. In the column, contents.js hides the subsections
-   of all but the current section; at every width it adds the hash bar. Without it every subsection shows. */
+   enough for the column and is centred again once both sides have room. In the column, contents.js hides the
+   subsections of all but the current section; at every width it adds the hash bar. Without it every subsection
+   shows. */
 html:has(.post-toc) { scroll-behavior: smooth; }
 .post h2, .post h3 { scroll-margin-top: 24px; }
 .post .post-toc { margin: -24px 0 56px; border-block: 1px solid var(--line); font: 400 13px/1.5 var(--mono); }

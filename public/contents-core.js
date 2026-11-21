@@ -6,9 +6,10 @@
 
   // Index of the last heading whose top (from the top of the viewport) is at or above `line`; -1 before the first.
   // Once the page can scroll no further (`atEnd`) it is the last heading, which a short last section on a tall
-  // screen never brings up to the line.
-  function currentHeading(tops, line, atEnd) {
-    if (atEnd && tops.length) return tops.length - 1;
+  // screen never brings up to the line, unless the reader jumped to a heading (`jumped`, its index): a jump to a late
+  // section can stop at the page's end too.
+  function currentHeading(tops, line, atEnd, jumped) {
+    if (atEnd && tops.length) return jumped >= 0 && jumped < tops.length ? jumped : tops.length - 1;
     let current = -1;
     tops.forEach((top, i) => { if (top <= line) current = i; });
     return current;
@@ -33,7 +34,12 @@
     return left > 0 ? left + " min left" : "read to the end";
   }
 
-  const api = { currentHeading, readingProgress, readingBar, minutesLeft };
+  // Whether the page can scroll no further; 2px of slack for fractional scroll positions.
+  function atPageEnd(scrollY, viewport, scrollHeight) {
+    return scrollY + viewport >= scrollHeight - 2;
+  }
+
+  const api = { currentHeading, atPageEnd, readingProgress, readingBar, minutesLeft };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Contents = api;
 })(this);

@@ -26,12 +26,14 @@
   const [on, off] = bar.querySelectorAll(".post-toc-hashes span"), [pct, left] = bar.querySelectorAll(".post-toc-meta span");
 
   const wide = matchMedia("(min-width: 1000px)");
-  let frame = 0;
+  // The heading the reader last jumped to (a contents link or the address's #), until they scroll by hand.
+  const indexOf = hash => links.findIndex(a => a.hash === hash);
+  let jumped = indexOf(location.hash), frame = 0;
   const update = () => {
     frame = 0;
     const box = post.getBoundingClientRect(), p = C.readingProgress(box.top, box.height, innerHeight);
-    const atEnd = scrollY + innerHeight >= document.documentElement.scrollHeight - 2;
-    const i = C.currentHeading(heads.map(h => h.getBoundingClientRect().top), LINE, atEnd);
+    const atEnd = C.atPageEnd(scrollY, innerHeight, document.documentElement.scrollHeight);
+    const i = C.currentHeading(heads.map(h => h.getBoundingClientRect().top), LINE, atEnd, jumped);
     const s = i < 0 ? -1 : sectionOf[i];
     links.forEach((a, j) => {
       a.classList.toggle("is-on", j === i || j === sectionLink[s]);
@@ -49,6 +51,11 @@
   const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
   addEventListener("scroll", schedule, { passive: true });
   addEventListener("resize", schedule);
+  const jump = hash => { jumped = indexOf(hash); schedule(); };
+  nav.addEventListener("click", e => { const a = e.target.closest("a[href^='#']"); if (a) jump(a.hash); });
+  addEventListener("hashchange", () => jump(location.hash));
+  const byHand = () => { if (jumped >= 0) { jumped = -1; schedule(); } };
+  for (const type of ["wheel", "touchmove", "keydown"]) addEventListener(type, byHand, { passive: true });
   const fit = () => { if (wide.matches) details.open = true; schedule(); };
   wide.addEventListener("change", fit);
   fit();

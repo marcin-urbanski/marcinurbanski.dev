@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { currentHeading, readingProgress, readingBar, minutesLeft } = require("../public/contents-core.js");
+const { currentHeading, atPageEnd, readingProgress, readingBar, minutesLeft } = require("../public/contents-core.js");
 
 // Heading tops are measured from the top of the viewport; the reading line sits a little below it.
 test("currentHeading is -1 while every heading is still below the reading line", () => {
@@ -15,6 +15,22 @@ test("currentHeading is the last heading at or above the reading line", () => {
 // On a tall screen a short last section never reaches the reading line before the page ends.
 test("currentHeading is the last heading once the page can scroll no further", () => {
   assert.equal(currentHeading([-3000, -2000, 400], 120, true), 2);
+});
+
+// A jump to a late section can stop at the page's end, where the scroll position alone would light the last one.
+test("currentHeading at the page's end is the heading the reader jumped to, if any", () => {
+  assert.equal(currentHeading([-3000, 82, 400], 120, true, 1), 1);
+  assert.equal(currentHeading([-3000, 82, 400], 120, true, -1), 2);
+});
+
+test("currentHeading ignores the jump away from the page's end", () => {
+  assert.equal(currentHeading([-3000, -900, 90], 120, false, 0), 2);
+});
+
+test("atPageEnd is true once the page can scroll no further, allowing for fractional scroll", () => {
+  assert.equal(atPageEnd(3000, 800, 3800), true);
+  assert.equal(atPageEnd(2998.5, 800, 3800), true);
+  assert.equal(atPageEnd(2997, 800, 3800), false);
 });
 
 // The post's end comes into view while its last few headings are still below the line; they must each get a turn.
