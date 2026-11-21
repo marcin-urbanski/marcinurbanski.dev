@@ -155,6 +155,15 @@ html:has(.post-toc) { scroll-behavior: smooth; }
 .post-toc-hashes .on, .post-toc-hashes .off { color: var(--ink); }
 .post-toc-hashes .off { opacity: .22; }
 .post-toc-meta { display: flex; justify-content: space-between; color: var(--muted-2); font-variant-numeric: tabular-nums; }
+
+/* More writing: the other posts after a post, as the home page's Writing rows. Before the 1000px block below,
+   which moves it right with the post. */
+.more-writing { max-width: 680px; margin: 112px auto 0; }
+.more-writing-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line); font: 400 13px/1.4 var(--mono); }
+.more-writing-head a { color: var(--muted-2); text-decoration: none; padding-block: 12px; }
+.more-writing-head a:hover { color: var(--ink); }
+.more-writing .hp-row { text-decoration: none; }
+
 @media (min-width: 1000px) {
   .post, .more-writing { margin-left: max(320px, calc((100% - 680px) / 2)); }
   .post { position: relative; }
@@ -165,13 +174,6 @@ html:has(.post-toc) { scroll-behavior: smooth; }
   .post-toc .ts { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .post-toc a { padding: 5px 0; }
 }
-
-/* More writing: the other posts after a post, as the home page's Writing rows */
-.more-writing { max-width: 680px; margin: 112px auto 0; }
-.more-writing-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line); font: 400 13px/1.4 var(--mono); }
-.more-writing-head a { color: var(--muted-2); text-decoration: none; padding-block: 12px; }
-.more-writing-head a:hover { color: var(--ink); }
-.more-writing .hp-row { text-decoration: none; }
 
 /* 404 */
 .lost { padding-top: 22vh; }

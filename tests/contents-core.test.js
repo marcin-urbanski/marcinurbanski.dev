@@ -12,6 +12,12 @@ test("currentHeading is the last heading at or above the reading line", () => {
   assert.equal(currentHeading([-800, -200, 121, 700], 120), 1);
 });
 
+// On a tall screen a short last section never reaches the reading line before the page ends.
+test("currentHeading is the last heading once the post is read to the end", () => {
+  assert.equal(currentHeading([-3000, -2000, 400], 120, 1), 2);
+  assert.equal(currentHeading([-3000, -2000, 400], 120, .99), 1);
+});
+
 test("currentHeading stays on the last heading after it has scrolled away", () => {
   assert.equal(currentHeading([-3000, -2000, -900], 120), 2);
 });

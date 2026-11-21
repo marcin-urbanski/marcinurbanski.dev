@@ -1,7 +1,7 @@
 // A post's contents (contents-core.js has the maths). From 1000px it opens the <details>, which the CSS turns into
-// a sticky column. On every width it marks the link of the heading being read (and its section's link), hides the
-// subsections of every other section and adds a hash bar with the minutes left. Without it the contents are
-// a plain "+ contents" list with every subsection.
+// a sticky column, where it also hides the subsections of every section but the current one. On every width it
+// marks the link of the heading being read (and its section's link) and adds a hash bar with the minutes left.
+// Without it the contents are a plain "+ contents" list with every subsection.
 (() => {
   const C = window.Contents, nav = document.querySelector(".post-toc"), post = document.querySelector(".post");
   if (!C || !nav || !post) return;
@@ -26,22 +26,19 @@
   const [on, off] = bar.querySelectorAll(".post-toc-hashes span"), [pct, left] = bar.querySelectorAll(".post-toc-meta span");
 
   const wide = matchMedia("(min-width: 1000px)");
-  const fit = () => { if (wide.matches) details.open = true; };
-  fit();
-  wide.addEventListener("change", fit);
-
   let frame = 0;
   const update = () => {
     frame = 0;
-    const i = C.currentHeading(heads.map(h => h.getBoundingClientRect().top), LINE);
+    const box = post.getBoundingClientRect(), p = C.readingProgress(box.top, box.height, innerHeight);
+    const i = C.currentHeading(heads.map(h => h.getBoundingClientRect().top), LINE, p);
     const s = i < 0 ? -1 : sectionOf[i];
     links.forEach((a, j) => {
       a.classList.toggle("is-on", j === i || j === sectionLink[s]);
       if (j === i) a.setAttribute("aria-current", "location");
       else a.removeAttribute("aria-current");
     });
-    sections.forEach((li, k) => { const sub = li.querySelector("ol"); if (sub) sub.hidden = k !== s; });
-    const box = post.getBoundingClientRect(), p = C.readingProgress(box.top, box.height, innerHeight);
+    // Only the sticky column folds subsections away; the narrow list sits above the text and keeps them all.
+    sections.forEach((li, k) => { const sub = li.querySelector("ol"); if (sub) sub.hidden = wide.matches && k !== s; });
     const cells = C.readingBar(p, CELLS);
     on.textContent = cells.on;
     off.textContent = cells.off;
@@ -51,5 +48,7 @@
   const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
   addEventListener("scroll", schedule, { passive: true });
   addEventListener("resize", schedule);
-  update();
+  const fit = () => { if (wide.matches) details.open = true; schedule(); };
+  wide.addEventListener("change", fit);
+  fit();
 })();
