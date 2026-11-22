@@ -15,11 +15,11 @@
     return current;
   }
 
-  // 0 while the post's top is below the top of the viewport, 1 once its bottom is in view.
-  // `top` and `height` are the post's bounding box, `viewport` the window's height.
-  function readingProgress(top, height, viewport) {
-    const span = height - viewport;
-    return span <= 0 ? 1 : clamp(-top / span, 0, 1);
+  // The share of the post above the reading line `line`, where currentHeading picks the section, so the bar and the
+  // lit section agree; 1 once the page can scroll no further (`atEnd`), which a short post or a tall screen reaches
+  // before the post's bottom gets to the line. `top` and `height` are the post's bounding box.
+  function readingProgress(top, height, line, atEnd) {
+    return atEnd ? 1 : clamp((line - top) / height, 0, 1);
   }
 
   // The bar's read and unread hashes: `cells` in all, the read share rounded to whole cells.

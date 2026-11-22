@@ -59,22 +59,28 @@ test("currentHeading stays on the last heading after it has scrolled away", () =
   assert.equal(currentHeading([-3000, -2000, -900], 120), 2);
 });
 
-// The post is read from its top reaching the top of the viewport to its bottom reaching the bottom.
-test("readingProgress is 0 before the post reaches the top of the viewport", () => {
-  assert.equal(readingProgress(400, 5000, 800), 0);
+// Progress is read at the same line as the current heading: the share of the post above the reading line.
+test("readingProgress is 0 while the post's top is below the reading line", () => {
+  assert.equal(readingProgress(400, 5000, 120, false), 0);
 });
 
-test("readingProgress is the share of the scrollable length already scrolled", () => {
-  assert.equal(readingProgress(-1050, 5000, 800), .25);
+test("readingProgress is the share of the post above the reading line", () => {
+  assert.equal(readingProgress(-1130, 5000, 120, false), .25);
 });
 
-test("readingProgress is 1 once the post's end is in view", () => {
-  assert.equal(readingProgress(-4200, 5000, 800), 1);
-  assert.equal(readingProgress(-6000, 5000, 800), 1);
+// The reported bug: the post's end is in view, but the reading line is still above it.
+test("readingProgress is below 1 while the post's end is in view but below the reading line", () => {
+  assert.ok(readingProgress(-4200, 5000, 120, false) < 1);
 });
 
-test("readingProgress is 1 for a post shorter than the viewport", () => {
-  assert.equal(readingProgress(100, 600, 800), 1);
+test("readingProgress is 1 once the post's bottom has passed the reading line", () => {
+  assert.equal(readingProgress(-4880, 5000, 120, false), 1);
+  assert.equal(readingProgress(-6000, 5000, 120, false), 1);
+});
+
+// A short post, or a tall screen, never brings the post's bottom up to the line.
+test("readingProgress is 1 once the page can scroll no further", () => {
+  assert.equal(readingProgress(100, 600, 120, true), 1);
 });
 
 test("readingBar fills its cells with hashes in proportion to progress", () => {

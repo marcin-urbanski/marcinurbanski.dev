@@ -94,3 +94,12 @@ test("every post loads the contents scripts, maths first, both deferred", () => 
     assert.match(html, /<script src="\/contents-core\.js\?v=[0-9a-f]{8}" defer><\/script>\s*<script src="\/contents\.js\?v=[0-9a-f]{8}" defer><\/script>\s*<\/head>/, name);
   }
 });
+
+// The bar once measured scrolling against the window's height, so it read 100% as soon as the post's end came into
+// view, with a screen of text still to read (TimeRabbit at 1440×900: 98% with two sections to go). It must measure at
+// the reading line the current section is picked at, and know when the page can scroll no further.
+test("the reading bar measures at the same reading line as the lit section", () => {
+  const js = fs.readFileSync(path.join(__dirname, "../public/contents.js"), "utf8");
+  assert.match(js, /C\.currentHeading\([^;]*,\s*LINE\s*,/);
+  assert.match(js, /C\.readingProgress\([^;]*,\s*LINE\s*,\s*atEnd\s*\)/);
+});
