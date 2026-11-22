@@ -32,8 +32,8 @@
   let jumped = indexOf(location.hash), wasAtEnd = false, frame = 0;
   const update = () => {
     frame = 0;
-    const box = post.getBoundingClientRect(), p = C.readingProgress(box.top, box.height, innerHeight);
     const atEnd = C.atPageEnd(scrollY, innerHeight, document.documentElement.scrollHeight);
+    const box = post.getBoundingClientRect(), p = C.readingProgress(box.top, box.height, LINE, atEnd);
     jumped = C.keptJump(jumped, wasAtEnd, atEnd);
     wasAtEnd = atEnd;
     const i = C.currentHeading(heads.map(h => h.getBoundingClientRect().top), LINE, atEnd, jumped);
