@@ -68,6 +68,11 @@ test("readingProgress is the share of the post above the reading line", () => {
   assert.equal(readingProgress(-1130, 5000, 120, false), .25);
 });
 
+// The reported bug: the post's end is in view, but the reading line is still above it.
+test("readingProgress is below 1 while the post's end is in view but below the reading line", () => {
+  assert.ok(readingProgress(-4200, 5000, 120, false) < 1);
+});
+
 test("readingProgress is 1 once the post's bottom has passed the reading line", () => {
   assert.equal(readingProgress(-4880, 5000, 120, false), 1);
   assert.equal(readingProgress(-6000, 5000, 120, false), 1);
